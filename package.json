@@ -1,0 +1,13 @@
+{
+  "name": "medeasy",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Medeasy — hospital/patient platform monorepo",
+  "workspaces": [
+    "apps/backend"
+  ],
+  "scripts": {
+    "backend:dev": "npm run dev --workspace=apps/backend",
+    "backend:build": "npm run build --workspace=apps/backend"
+  }
+}
