@@ -196,10 +196,10 @@ export class AuthService {
     role: UserRole,
     extraClaims: Partial<AccessTokenPayload>,
   ): Promise<TokenPair> {
-    const accessTokenExpiresIn = env.JWT_ACCESS_EXPIRY;
-    const accessToken = jwt.sign({ sub: userId, role, ...extraClaims }, env.JWT_ACCESS_SECRET, {
-      expiresIn: accessTokenExpiresIn,
-    });
+    const signOptions: jwt.SignOptions = {
+      expiresIn: env.JWT_ACCESS_EXPIRY as jwt.SignOptions['expiresIn'],
+    };
+    const accessToken = jwt.sign({ sub: userId, role, ...extraClaims }, env.JWT_ACCESS_SECRET, signOptions);
 
     const jti = randomUUID();
     const refreshTtlSeconds = env.JWT_REFRESH_EXPIRY_DAYS * 24 * 60 * 60;
