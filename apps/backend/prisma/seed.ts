@@ -7,6 +7,16 @@ async function main() {
   const doctorPasswordHash = await bcrypt.hash('DoctorPass123!', 12);
   const adminPasswordHash = await bcrypt.hash('AdminPass123!', 12);
 
+  const hospital = await prisma.hospital.upsert({
+    where: { id: '11111111-1111-1111-1111-111111111111' },
+    update: {},
+    create: {
+      id: '11111111-1111-1111-1111-111111111111',
+      name: 'Apex Multispecialty Hospital',
+      address: 'Boring Road, Patna, Bihar',
+    },
+  });
+
   await prisma.user.upsert({
     where: { email: 'anjali.sharma@apex.com' },
     update: {},
@@ -18,10 +28,11 @@ async function main() {
       verifiedAt: new Date(),
       doctor: {
         create: {
-          hospitalId: '11111111-1111-1111-1111-111111111111',
+          hospitalId: hospital.id,
           specialty: 'Cardiology',
           licenseNo: 'MCI-BR-20191234',
           licenseVerified: true,
+          avgConsultMinutes: 20,
         },
       },
     },
@@ -36,6 +47,18 @@ async function main() {
       email: 'suresh.p@apex.com',
       passwordHash: adminPasswordHash,
       verifiedAt: new Date(),
+    },
+  });
+
+  await prisma.user.upsert({
+    where: { phone: '+919000000001' },
+    update: {},
+    create: {
+      role: 'patient',
+      name: 'Rohit Kumar',
+      phone: '+919000000001',
+      verifiedAt: new Date(),
+      patientProfile: { create: {} },
     },
   });
 

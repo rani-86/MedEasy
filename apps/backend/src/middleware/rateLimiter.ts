@@ -55,3 +55,22 @@ export const loginRateLimiter = rateLimit({
   keyGenerator: (req) => `${req.body?.email ?? 'unknown'}:${req.ip}`,
   handler: (_req, _res, next) => next(new TooManyRequestsError('Too many login attempts. Please try again later.')),
 });
+
+// Booking-mutation endpoints — keyed by patient (authenticated user), not IP, since
+// a hospital waiting room's shared WiFi would otherwise trip a per-IP limit for
+// every legitimate patient booking at once.
+
+
+// Booking-mutation endpoints — keyed by patient (authenticated user), not IP, since
+// a hospital waiting room's shared WiFi would otherwise trip a per-IP limit for
+// every legitimate patient booking at once.
+export const bookingRateLimiter = rateLimit({
+  store: redisStore('rl:booking:'),
+  windowMs: 60_000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => req.user?.sub ?? req.ip ?? 'unknown',
+  handler: (_req, _res, next) =>
+    next(new TooManyRequestsError('Too many booking attempts. Please wait a moment and try again.')),
+});

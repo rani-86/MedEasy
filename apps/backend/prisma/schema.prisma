@@ -13,6 +13,13 @@ enum UserRole {
   admin
 }
 
+enum AppointmentStatus {
+  booked
+  completed
+  cancelled
+  no_show
+}
+
 model User {
   id           String    @id @default(uuid())
   role         UserRole
@@ -36,19 +43,58 @@ model PatientProfile {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now()) @map("created_at")
 
+  appointments Appointment[]
+
   @@map("patient_profiles")
 }
 
+model Hospital {
+  id        String   @id @default(uuid())
+  name      String
+  address   String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  doctors      Doctor[]
+  appointments Appointment[]
+
+  @@map("hospitals")
+}
+
 model Doctor {
-  id              String   @id @default(uuid())
-  userId          String   @unique @map("user_id")
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  hospitalId      String   @map("hospital_id")
-  specialty       String
-  licenseNo       String   @unique @map("license_no")
-  licenseVerified Boolean  @default(false) @map("license_verified")
-  createdAt       DateTime @default(now()) @map("created_at")
+  id                String   @id @default(uuid())
+  userId            String   @unique @map("user_id")
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  hospitalId        String   @map("hospital_id")
+  hospital          Hospital @relation(fields: [hospitalId], references: [id])
+  specialty         String
+  licenseNo         String   @unique @map("license_no")
+  licenseVerified   Boolean  @default(false) @map("license_verified")
+  avgConsultMinutes Int      @default(15) @map("avg_consult_minutes")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  appointments Appointment[]
 
   @@index([hospitalId])
   @@map("doctors")
+}
+
+model Appointment {
+  id         String            @id @default(uuid())
+  patientId  String            @map("patient_id")
+  patient    PatientProfile    @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctorId   String            @map("doctor_id")
+  doctor     Doctor            @relation(fields: [doctorId], references: [id])
+  hospitalId String            @map("hospital_id")
+  hospital   Hospital          @relation(fields: [hospitalId], references: [id])
+  slotStart  DateTime          @map("slot_start")
+  slotEnd    DateTime          @map("slot_end")
+  status     AppointmentStatus @default(booked)
+  createdAt  DateTime          @default(now()) @map("created_at")
+
+  // Prevents two 'booked' appointments from sharing the same doctor + slot at the DB level —
+  // a second, structural guard behind the Redis lock used in the booking service.
+  @@unique([doctorId, slotStart], name: "uq_doctor_slot")
+  @@index([patientId, slotStart])
+  @@index([hospitalId, slotStart])
+  @@map("appointments")
 }
