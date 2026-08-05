@@ -40,12 +40,13 @@ async function main() {
 
   await prisma.user.upsert({
     where: { email: 'suresh.p@apex.com' },
-    update: {},
+    update: { hospitalId: hospital.id },
     create: {
       role: 'admin',
       name: 'Suresh Prasad',
       email: 'suresh.p@apex.com',
       passwordHash: adminPasswordHash,
+      hospitalId: hospital.id,
       verifiedAt: new Date(),
     },
   });
@@ -60,6 +61,17 @@ async function main() {
       verifiedAt: new Date(),
       patientProfile: { create: {} },
     },
+  });
+
+  await prisma.bed.upsert({
+    where: { hospitalId_bedNumber: { hospitalId: hospital.id, bedNumber: 'ICU-01' } },
+    update: {},
+    create: { hospitalId: hospital.id, category: 'icu', bedNumber: 'ICU-01', status: 'vacant' },
+  });
+  await prisma.bed.upsert({
+    where: { hospitalId_bedNumber: { hospitalId: hospital.id, bedNumber: 'GEN-14' } },
+    update: {},
+    create: { hospitalId: hospital.id, category: 'general', bedNumber: 'GEN-14', status: 'vacant' },
   });
 
   console.log('Seed complete. Note: admin TOTP secret must be provisioned separately via the MFA setup flow.');

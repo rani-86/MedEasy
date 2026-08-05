@@ -27,6 +27,7 @@ model User {
   phone        String?   @unique
   email        String?   @unique
   passwordHash String?   @map("password_hash")
+  hospitalId   String?   @map("hospital_id")
   isActive     Boolean   @default(true) @map("is_active")
   createdAt    DateTime  @default(now()) @map("created_at")
   verifiedAt   DateTime? @map("verified_at")
@@ -34,6 +35,7 @@ model User {
   patientProfile PatientProfile?
   doctor         Doctor?
 
+  @@index([hospitalId])
   @@map("users")
 }
 
@@ -44,6 +46,7 @@ model PatientProfile {
   createdAt DateTime @default(now()) @map("created_at")
 
   appointments Appointment[]
+  bedAdmissions BedAdmission[]
 
   @@map("patient_profiles")
 }
@@ -56,8 +59,24 @@ model Hospital {
 
   doctors      Doctor[]
   appointments Appointment[]
+  beds         Bed[]
 
   @@map("hospitals")
+}
+
+enum BedCategory {
+  icu
+  general
+  maternity
+  isolation
+  emergency
+}
+
+enum BedStatus {
+  vacant
+  occupied
+  reserved
+  cleaning
 }
 
 model Doctor {
@@ -97,4 +116,35 @@ model Appointment {
   @@index([patientId, slotStart])
   @@index([hospitalId, slotStart])
   @@map("appointments")
+}
+
+model Bed {
+  id                String    @id @default(uuid())
+  hospitalId        String    @map("hospital_id")
+  hospital          Hospital  @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  category          BedCategory
+  bedNumber         String    @map("bed_number")
+  status            BedStatus @default(vacant)
+  currentPatientId  String?   @map("current_patient_id")
+  updatedAt         DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  admissions BedAdmission[]
+
+  @@unique([hospitalId, bedNumber])
+  @@index([hospitalId, category, status])
+  @@map("beds")
+}
+
+model BedAdmission {
+  id           String    @id @default(uuid())
+  bedId        String    @map("bed_id")
+  bed          Bed       @relation(fields: [bedId], references: [id])
+  patientId    String    @map("patient_id")
+  patient      PatientProfile @relation(fields: [patientId], references: [id])
+  admittedAt   DateTime  @default(now()) @map("admitted_at")
+  dischargedAt DateTime? @map("discharged_at")
+
+  @@index([patientId, admittedAt])
+  @@index([bedId])
+  @@map("bed_admissions")
 }

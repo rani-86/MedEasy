@@ -1,6 +1,8 @@
+import http from 'http';
 import { createApp } from './app';
+import { initSocketServer } from './sockets';
 import { connectDb, disconnectDb } from './config/db';
-import { redisClient } from './config/redis';
+import { redisClient, redisSubClient } from './config/redis';
 import { env } from './config/env';
 import { logger } from './config/logger';
 
@@ -8,20 +10,23 @@ async function main(): Promise<void> {
   await connectDb();
 
   const app = createApp();
-  const server = app.listen(env.PORT, () => {
-    logger.info(`Medeasy Auth service listening on port ${env.PORT} [${env.NODE_ENV}]`);
+  const httpServer = http.createServer(app);
+
+  initSocketServer(httpServer);
+
+  httpServer.listen(env.PORT, () => {
+    logger.info(`Medeasy backend listening on port ${env.PORT} [${env.NODE_ENV}]`);
   });
 
   const shutdown = async (signal: string) => {
     logger.info(`Received ${signal}, shutting down gracefully...`);
-    server.close(async () => {
+    httpServer.close(async () => {
       await disconnectDb();
       redisClient.disconnect();
+      redisSubClient.disconnect();
       logger.info('Shutdown complete');
       process.exit(0);
     });
-
-    // Force-exit if graceful shutdown hangs
     setTimeout(() => process.exit(1), 10_000).unref();
   };
 

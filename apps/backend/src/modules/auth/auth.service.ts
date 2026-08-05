@@ -9,6 +9,7 @@ import { UnauthorizedError, ForbiddenError } from '../../common/errors';
 import { OtpService } from './otp.service';
 import { AccessTokenPayload, RefreshTokenPayload, TokenPair, UserRole } from './auth.types';
 
+authenticator.options = { window: 2 };
 const BCRYPT_ROUNDS = 12;
 const REFRESH_TOKEN_REDIS_KEY = (userId: string) => `refresh:${userId}`;
 
@@ -119,6 +120,7 @@ export class AuthService {
     }
 
     return this.issueTokenPair(user.id, 'admin', {
+      hospitalId: user.hospitalId ?? undefined,
       scopes: ['admin:beds', 'admin:inventory', 'admin:doctors', 'admin:analytics'],
     });
   }
@@ -166,6 +168,7 @@ export class AuthService {
       });
     }
     return this.issueTokenPair(user.id, 'admin', {
+      hospitalId: user.hospitalId ?? undefined,
       scopes: ['admin:beds', 'admin:inventory', 'admin:doctors', 'admin:analytics'],
     });
   }
