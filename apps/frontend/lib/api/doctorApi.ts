@@ -21,4 +21,9 @@ export const doctorApi = {
     const res = await apiClient.get('/doctors', { params: search ? { search } : {} });
     return res.data;
   },
+
+  getById: async (id: string): Promise<Doctor> => {
+    const res = await apiClient.get(`/doctors/${id}`);
+    return res.data.data;
+  },
 };

@@ -22,7 +22,17 @@ export const appointmentApi = {
     return res.data.data;
   },
 
+  getById: async (id: string): Promise<Appointment> => {
+    const res = await apiClient.get(`/appointments/${id}`);
+    return res.data.data;
+  },
+
   cancel: async (id: string): Promise<void> => {
     await apiClient.patch(`/appointments/${id}/cancel`);
+  },
+
+  reschedule: async (id: string, newSlotStart: string): Promise<Appointment> => {
+    const res = await apiClient.patch(`/appointments/${id}/reschedule`, { newSlotStart });
+    return res.data.data;
   },
 };
