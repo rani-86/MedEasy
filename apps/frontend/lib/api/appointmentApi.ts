@@ -11,6 +11,10 @@ export interface Appointment {
   createdAt: string;
 }
 
+export interface QueueAppointment extends Appointment {
+  patientName: string;
+}
+
 export const appointmentApi = {
   book: async (doctorId: string, slotStart: string): Promise<Appointment> => {
     const res = await apiClient.post('/appointments', { doctorId, slotStart });
@@ -24,5 +28,10 @@ export const appointmentApi = {
 
   cancel: async (id: string): Promise<void> => {
     await apiClient.patch(`/appointments/${id}/cancel`);
+  },
+
+  listForDoctorQueue: async (date: string): Promise<QueueAppointment[]> => {
+    const res = await apiClient.get('/appointments/queue/today', { params: { date } });
+    return res.data.data;
   },
 };
