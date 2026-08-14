@@ -1,7 +1,10 @@
+import { Appointment, AppointmentStatus } from '@prisma/client';
 import { prisma } from '../../config/db';
 import { acquireLock, releaseLock } from '../../common/utils/locks';
 import { ConflictError, NotFoundError, ForbiddenError } from '../../common/errors';
 import { publishEvent } from '../../events/eventBus';
+import { getSocketServer } from '../../sockets/socketRegistry';
+import { emitQueueUpdated } from '../../sockets/queue.namespace';
 import { AccessTokenPayload } from '../auth/auth.types';
 import { PaginationMeta } from './appointment.types';
 
@@ -52,6 +55,7 @@ export class AppointmentService {
         patientId: appointment.patientId,
         slotStart: appointment.slotStart.toISOString(),
       });
+      await this.emitQueueUpdate(appointment);
 
       return appointment;
     } finally {
@@ -84,14 +88,20 @@ export class AppointmentService {
   }
 
   async listForDoctor(doctorId: string, dateFrom: Date, dateTo: Date) {
-    return prisma.appointment.findMany({
+    const appointments = await prisma.appointment.findMany({
       where: {
         doctorId,
         slotStart: { gte: dateFrom, lt: dateTo },
         status: { in: ['booked', 'completed'] },
       },
+      include: { patient: { include: { user: true } } },
       orderBy: { slotStart: 'asc' },
     });
+
+    return appointments.map(({ patient, ...appointment }) => ({
+      ...appointment,
+      patientName: patient.user.name,
+    }));
   }
 
   async cancel(id: string, user: AccessTokenPayload) {
@@ -104,8 +114,9 @@ export class AppointmentService {
       throw new ConflictError(`Cannot cancel an appointment with status "${appointment.status}"`);
     }
 
-    await prisma.appointment.update({ where: { id }, data: { status: 'cancelled' } });
+    const cancelled = await prisma.appointment.update({ where: { id }, data: { status: 'cancelled' } });
     await publishEvent('AppointmentCancelled', { appointmentId: id, doctorId: appointment.doctorId });
+    await this.emitQueueUpdate(cancelled);
   }
 
   async complete(id: string, doctorUser: AccessTokenPayload) {
@@ -122,6 +133,7 @@ export class AppointmentService {
 
     const updated = await prisma.appointment.update({ where: { id }, data: { status: 'completed' } });
     await publishEvent('AppointmentCompleted', { appointmentId: id, doctorId: appointment.doctorId });
+    await this.emitQueueUpdate(updated);
     return updated;
   }
 
@@ -186,5 +198,34 @@ export class AppointmentService {
     if (user.role === 'patient' && appointment.patientId !== user.patientProfileId) {
       throw new ForbiddenError('You do not have access to this appointment');
     }
+  }
+
+  private async emitQueueUpdate(appointment: Appointment) {
+    const io = getSocketServer();
+    if (!io) return;
+
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const [patient, queueCount] = await Promise.all([
+      prisma.patientProfile.findUnique({
+        where: { id: appointment.patientId },
+        include: { user: true },
+      }),
+      prisma.appointment.count({
+        where: {
+          doctorId: appointment.doctorId,
+          status: 'booked' as AppointmentStatus,
+          slotStart: { gte: new Date(`${todayStr}T00:00:00.000Z`), lt: new Date(`${todayStr}T23:59:59.999Z`) },
+        },
+      }),
+    ]);
+
+    emitQueueUpdated(io, appointment.doctorId, {
+      appointmentId: appointment.id,
+      patientId: appointment.patientId,
+      patientName: patient?.user.name ?? 'Unknown patient',
+      slotStart: appointment.slotStart.toISOString(),
+      status: appointment.status,
+      queueCount,
+    });
   }
 }

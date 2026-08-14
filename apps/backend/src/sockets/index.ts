@@ -4,6 +4,7 @@ import { createAdapter } from '@socket.io/redis-adapter';
 import { redisClient, redisSubClient } from '../config/redis';
 import { env } from '../config/env';
 import { registerBedsNamespace } from './beds.namespace';
+import { registerQueueNamespace } from './queue.namespace';
 import { setSocketServer } from './socketRegistry';
 
 export function initSocketServer(httpServer: HttpServer): SocketIOServer {
@@ -13,6 +14,7 @@ export function initSocketServer(httpServer: HttpServer): SocketIOServer {
   });
 
   registerBedsNamespace(io);
+  registerQueueNamespace(io);
   setSocketServer(io);
 
   return io;
