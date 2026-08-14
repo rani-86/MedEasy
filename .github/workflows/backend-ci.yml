@@ -6,11 +6,13 @@ on:
     paths:
       - 'apps/backend/**'
       - 'package-lock.json'
+      - '.github/workflows/backend-ci.yml'
   pull_request:
     branches: [main]
     paths:
       - 'apps/backend/**'
       - 'package-lock.json'
+      - '.github/workflows/backend-ci.yml'
 
 jobs:
   build-and-typecheck:
