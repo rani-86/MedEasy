@@ -9,6 +9,7 @@ import { errorHandler } from './middleware/errorHandler';
 import authRoutes from './modules/auth/auth.routes';
 import appointmentRoutes from './modules/appointments/appointment.routes';
 import bedRoutes from './modules/beds/bed.routes';
+import doctorRoutes from './modules/doctors/doctor.routes';
 
 export function createApp(): Application {
   const app = express();
@@ -28,6 +29,7 @@ export function createApp(): Application {
   app.use('/api/v1/auth', authRoutes);
   app.use('/api/v1/appointments', appointmentRoutes);
   app.use('/api/v1/beds', bedRoutes);
+  app.use('/api/v1/doctors', doctorRoutes);
 
   app.get('/health', (_req, res) => res.status(200).json({ status: 'ok' }));
 
