@@ -135,10 +135,10 @@ function AppointmentsPageContent() {
         <ul className="space-y-2">
           {appointments.map((a) => (
             <li key={a.id} className="border rounded p-3 flex justify-between items-center">
-              <div>
+              <Link href={`/appointments/${a.id}`} className="hover:underline">
                 <p className="text-sm font-medium">{new Date(a.slotStart).toLocaleString()}</p>
                 <p className="text-xs text-gray-500">Status: {a.status}</p>
-              </div>
+              </Link>
               {a.status === 'booked' && (
                 <button
                   onClick={() => handleCancel(a.id)}

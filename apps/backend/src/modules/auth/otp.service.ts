@@ -11,8 +11,12 @@ export class OtpService {
   /**
    * Generates a numeric OTP, stores it in Redis with a TTL, and dispatches it via SMS.
    * The SMS send is stubbed here — wire up a real provider (e.g. MSG91, Twilio) in production.
+   *
+   * Returns the code itself only when DEMO_MODE is on, so the caller can surface it in the
+   * API response — there's no SMS provider wired up, so without this a demo deployment would
+   * have no way to actually deliver the OTP anywhere.
    */
-  async generateAndSend(phone: string): Promise<void> {
+  async generateAndSend(phone: string): Promise<{ demoOtp?: string }> {
     const code = otpGenerator.generate(env.OTP_LENGTH, {
       digits: true,
       upperCaseAlphabets: false,
@@ -24,6 +28,8 @@ export class OtpService {
     await redisClient.del(OTP_ATTEMPTS_KEY(phone)); // reset attempt counter on a fresh OTP
 
     await this.sendSms(phone, code);
+
+    return env.DEMO_MODE ? { demoOtp: code } : {};
   }
 
   async verify(phone: string, submittedOtp: string): Promise<boolean> {

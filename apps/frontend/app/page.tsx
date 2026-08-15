@@ -9,6 +9,7 @@ export default function LoginPage() {
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
+  const [demoOtp, setDemoOtp] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const setAccessToken = useAuthStore((s) => s.setAccessToken);
@@ -18,7 +19,8 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      await apiClient.post('/auth/otp/request', { phone });
+      const res = await apiClient.post('/auth/otp/request', { phone });
+      setDemoOtp(res.data.data.demoOtp ?? null);
       setStep('otp');
     } catch (err: any) {
       setError(err.response?.data?.error?.message ?? 'Something went wrong');
@@ -79,7 +81,13 @@ export default function LoginPage() {
 
         {step === 'otp' && (
           <>
-            <p className="text-sm text-gray-500">Check your backend terminal for the dev-mode OTP.</p>
+            {demoOtp ? (
+              <p className="text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+                Demo mode — no SMS provider is configured, so here&apos;s your code: <strong>{demoOtp}</strong>
+              </p>
+            ) : (
+              <p className="text-sm text-gray-500">Check your backend terminal for the dev-mode OTP.</p>
+            )}
             <input
               type="text"
               placeholder="6-digit code"

@@ -28,3 +28,4 @@ apps/backend/prisma/migrations/dev.db
 # ML
 apps/ml-service/mlruns/
 *.pkl
+.claude/
