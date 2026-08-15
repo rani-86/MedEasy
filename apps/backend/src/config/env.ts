@@ -30,6 +30,11 @@ export const env = {
   ALLOWED_ORIGINS: (process.env.ALLOWED_ORIGINS ?? 'http://localhost:3000').split(','),
 
   SMS_PROVIDER_API_KEY: process.env.SMS_PROVIDER_API_KEY ?? '',
+
+  // Returns generated OTPs directly in the API response instead of sending SMS.
+  // Independent of NODE_ENV so production hardening (JWT secret length, etc.) still applies —
+  // only flip this on for a public demo deployment with no real SMS provider wired up.
+  DEMO_MODE: process.env.DEMO_MODE === 'true',
 } as const;
 
 if (env.NODE_ENV === 'production') {
