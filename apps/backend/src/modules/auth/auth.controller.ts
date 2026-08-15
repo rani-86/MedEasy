@@ -6,10 +6,14 @@ import { UnauthorizedError } from '../../common/errors';
 const authService = new AuthService();
 
 const REFRESH_COOKIE_NAME = 'medeasy_refresh_token';
+// Frontend and backend are deployed on different origins (e.g. Vercel + Render), so the
+// refresh cookie needs SameSite=None to survive cross-site requests — which in turn requires
+// Secure. In local dev, frontend/backend share the "localhost" site (only the port differs),
+// so Strict works there and is the safer default.
 const REFRESH_COOKIE_OPTIONS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
-  sameSite: 'strict' as const,
+  sameSite: (process.env.NODE_ENV === 'production' ? 'none' : 'strict') as 'none' | 'strict',
   path: '/api/v1/auth',
   maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days, matches JWT_REFRESH_EXPIRY_DAYS default
 };

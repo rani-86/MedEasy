@@ -20,14 +20,14 @@ export class AuthService {
   // Patient flow: OTP-based, passwordless
   // ---------------------------------------------------------------------
 
-  async requestOtp(phone: string): Promise<{ message: string; expiresInSeconds: number }> {
+  async requestOtp(phone: string): Promise<{ message: string; expiresInSeconds: number; demoOtp?: string }> {
     const existingUser = await prisma.user.findUnique({ where: { phone } });
     if (existingUser && !existingUser.isActive) {
       throw new ForbiddenError('This account has been deactivated. Please contact support.');
     }
 
-    await this.otpService.generateAndSend(phone);
-    return { message: 'OTP sent successfully', expiresInSeconds: env.OTP_EXPIRY_SECONDS };
+    const { demoOtp } = await this.otpService.generateAndSend(phone);
+    return { message: 'OTP sent successfully', expiresInSeconds: env.OTP_EXPIRY_SECONDS, demoOtp };
   }
 
   async verifyOtpAndLogin(phone: string, otp: string, name?: string): Promise<TokenPair> {

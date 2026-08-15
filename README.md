@@ -2,13 +2,22 @@
 
 A multi-sided healthcare platform connecting patients, doctors, and hospital administrators — appointment booking, hospital discovery, live bed/queue visibility, and hospital operations (inventory, analytics).
 
+## Live demo
+
+- Frontend: https://medeasy-taupe.vercel.app
+- Backend: https://medeasy-zjs8.onrender.com (free tier — sleeps after 15 min idle, first request may take ~30-50s to wake up)
+
+Patient login uses OTP with no real SMS provider wired up — the demo deployment runs with `DEMO_MODE=true`,
+which returns the OTP directly in the UI instead of sending it. Doctor login: `anjali.sharma@apex.com` /
+`DoctorPass123!`. See [`DEPLOYMENT.md`](DEPLOYMENT.md) for how this is hosted and how to redeploy it.
+
 ## Repo structure
 
 ```
 medeasy/
 ├── apps/
-│   ├── backend/       Node.js + Express + TypeScript + Prisma + PostgreSQL
-│   ├── frontend/      Next.js (not yet scaffolded — see apps/frontend/README.md)
+│   ├── backend/       Node.js + Express + TypeScript + Prisma + PostgreSQL + Socket.IO
+│   ├── frontend/      Next.js App Router + Tailwind + Zustand + Socket.IO client
 │   └── ml-service/    FastAPI (not yet scaffolded — see apps/ml-service/README.md)
 ├── docs/              Full product and technical design docs
 └── .github/workflows/ CI
@@ -28,12 +37,15 @@ Read in this order:
 
 | Module | Status |
 |---|---|
-| Backend: Auth | ✅ Implemented (`apps/backend/src/modules/auth`) |
-| Backend: Appointments | ⬜ Not yet built |
-| Backend: Beds | ⬜ Not yet built |
+| Backend: Auth (OTP / doctor+password / admin+TOTP) | ✅ Implemented (`apps/backend/src/modules/auth`) |
+| Backend: Appointments (book/cancel/reschedule/complete, Redis-locked) | ✅ Implemented (`apps/backend/src/modules/appointments`) |
+| Backend: Beds (state machine + real-time via Socket.IO) | ✅ Implemented (`apps/backend/src/modules/beds`) |
+| Backend: Doctors (search/list) | ✅ Implemented (`apps/backend/src/modules/doctors`) |
+| Backend: Real-time doctor queue (`/queue` Socket.IO namespace) | ✅ Implemented (`apps/backend/src/sockets`) |
 | Backend: Inventory | ⬜ Not yet built |
-| Backend: Doctors/Hospitals | ⬜ Not yet built |
-| Frontend | ⬜ Not yet scaffolded |
+| Frontend: Patient OTP login, doctor search, booking, appointment detail | ✅ Implemented (`apps/frontend/app`) |
+| Frontend: Doctor login + live queue view | ✅ Implemented (`apps/frontend/app/doctor`) |
+| Frontend: Admin/bed views | ⬜ Not yet built |
 | ML service | ⬜ Not yet scaffolded (deferred until real usage data exists) |
 
 ## Getting started (backend)
@@ -48,6 +60,14 @@ npm run dev
 ```
 
 See [`apps/backend/README.md`](apps/backend/README.md) for endpoint documentation and security notes.
+
+## Getting started (frontend)
+
+```bash
+cd apps/frontend
+npm install
+npm run dev       # expects the backend running locally; see .env.local for NEXT_PUBLIC_API_BASE_URL
+```
 
 ## Contributing / commit convention
 
