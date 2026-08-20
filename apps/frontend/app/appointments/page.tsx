@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/lib/stores/authStore';
 import { appointmentApi, Appointment } from '@/lib/api/appointmentApi';
+import { TopBar } from '@/components/TopBar';
+import { StatusBadge } from '@/components/StatusBadge';
 
 export default function AppointmentsPage() {
   return (
@@ -86,71 +88,75 @@ function AppointmentsPageContent() {
   if (!accessToken) return null;
 
   return (
-    <main className="max-w-2xl mx-auto p-6 space-y-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">My Appointments</h1>
-        <Link href="/doctors" className="text-sm text-gray-500 hover:underline">
+    <>
+      <TopBar homeHref="/appointments">
+        <Link href="/doctors" className="font-medium" style={{ color: 'var(--muted)' }}>
           Find a Doctor
         </Link>
-      </div>
+      </TopBar>
 
-      <section className="border rounded p-4 space-y-3">
-        <h2 className="font-medium">Book a new appointment</h2>
-        <p className="text-xs text-gray-500">
-          <Link href="/doctors" className="underline">
-            Find a doctor
-          </Link>{' '}
-          to fill this in, or paste a doctor ID directly.
-        </p>
-        <input
-          type="text"
-          value={doctorId}
-          onChange={(e) => setDoctorId(e.target.value)}
-          className="w-full border rounded px-3 py-2 text-sm"
-          placeholder="Doctor ID"
-        />
-        <input
-          type="datetime-local"
-          value={slotStart}
-          onChange={(e) => setSlotStart(e.target.value)}
-          className="w-full border rounded px-3 py-2"
-        />
-        <button
-          onClick={handleBook}
-          disabled={booking}
-          className="w-full bg-black text-white rounded px-3 py-2 disabled:opacity-50"
-        >
-          {booking ? 'Booking...' : 'Book Appointment'}
-        </button>
-        {bookError && <p className="text-red-600 text-sm">{bookError}</p>}
-      </section>
+      <main className="max-w-2xl mx-auto p-6 space-y-8">
+        <h1 className="text-2xl font-semibold">My Appointments</h1>
 
-      <section className="space-y-3">
-        <h2 className="font-medium">Upcoming & past</h2>
-        {loading && <p className="text-sm text-gray-500">Loading...</p>}
-        {error && <p className="text-red-600 text-sm">{error}</p>}
-        {!loading && appointments.length === 0 && (
-          <p className="text-sm text-gray-500">No appointments yet.</p>
-        )}
-        <ul className="space-y-2">
-          {appointments.map((a) => (
-            <li key={a.id} className="border rounded p-3 flex justify-between items-center">
-              <Link href={`/appointments/${a.id}`} className="hover:underline">
-                <p className="text-sm font-medium">{new Date(a.slotStart).toLocaleString()}</p>
-                <p className="text-xs text-gray-500">Status: {a.status}</p>
-              </Link>
-              {a.status === 'booked' && (
-                <button
-                  onClick={() => handleCancel(a.id)}
-                  className="text-sm text-red-600 hover:underline"
-                >
-                  Cancel
-                </button>
-              )}
-            </li>
-          ))}
-        </ul>
-      </section>
-    </main>
+        <section className="card p-5 space-y-3">
+          <h2 className="font-medium">Book a new appointment</h2>
+          <p className="text-xs" style={{ color: 'var(--muted)' }}>
+            <Link href="/doctors" className="font-medium" style={{ color: 'var(--brand)' }}>
+              Find a doctor
+            </Link>{' '}
+            to fill this in, or paste a doctor ID directly.
+          </p>
+          <input
+            type="text"
+            value={doctorId}
+            onChange={(e) => setDoctorId(e.target.value)}
+            className="input text-sm"
+            placeholder="Doctor ID"
+          />
+          <input
+            type="datetime-local"
+            value={slotStart}
+            onChange={(e) => setSlotStart(e.target.value)}
+            className="input"
+          />
+          <button onClick={handleBook} disabled={booking} className="btn-primary w-full">
+            {booking ? 'Booking...' : 'Book Appointment'}
+          </button>
+          {bookError && (
+            <p className="text-sm rounded-lg px-3.5 py-2.5" style={{ background: 'var(--danger-soft)', color: 'var(--danger)' }}>
+              {bookError}
+            </p>
+          )}
+        </section>
+
+        <section className="space-y-3">
+          <h2 className="font-medium">Upcoming &amp; past</h2>
+          {loading && <p className="text-sm" style={{ color: 'var(--muted)' }}>Loading...</p>}
+          {error && (
+            <p className="text-sm rounded-lg px-3.5 py-2.5" style={{ background: 'var(--danger-soft)', color: 'var(--danger)' }}>
+              {error}
+            </p>
+          )}
+          {!loading && appointments.length === 0 && (
+            <p className="text-sm" style={{ color: 'var(--muted)' }}>No appointments yet.</p>
+          )}
+          <ul className="space-y-2">
+            {appointments.map((a) => (
+              <li key={a.id} className="card p-4 flex justify-between items-center gap-4">
+                <Link href={`/appointments/${a.id}`} className="space-y-1">
+                  <p className="text-sm font-medium">{new Date(a.slotStart).toLocaleString()}</p>
+                  <StatusBadge status={a.status} />
+                </Link>
+                {a.status === 'booked' && (
+                  <button onClick={() => handleCancel(a.id)} className="btn-danger shrink-0 text-xs px-3 py-1.5">
+                    Cancel
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      </main>
+    </>
   );
 }

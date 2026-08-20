@@ -12,6 +12,8 @@ import {
   verifyOtpSchema,
   doctorLoginSchema,
   adminLoginSchema,
+  adminMfaSetupRequestSchema,
+  adminMfaSetupConfirmSchema,
   changePasswordSchema,
 } from './auth.validation';
 
@@ -47,6 +49,20 @@ router.post(
   loginRateLimiter,
   validateRequest(adminLoginSchema),
   AuthController.adminLogin,
+);
+
+router.post(
+  '/admin/mfa/setup-request',
+  loginRateLimiter,
+  validateRequest(adminMfaSetupRequestSchema),
+  AuthController.requestAdminMfaSetup,
+);
+
+router.post(
+  '/admin/mfa/setup-confirm',
+  loginRateLimiter,
+  validateRequest(adminMfaSetupConfirmSchema),
+  AuthController.confirmAdminMfaSetup,
 );
 
 // No validateRequest here — the refresh token may arrive via the httpOnly cookie

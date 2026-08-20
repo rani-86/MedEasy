@@ -39,6 +39,25 @@ export const adminLoginSchema = z.object({
   params: z.object({}).optional(),
 });
 
+export const adminMfaSetupRequestSchema = z.object({
+  body: z.object({
+    email: z.string().email(),
+    password: z.string().min(8),
+  }),
+  query: z.object({}).optional(),
+  params: z.object({}).optional(),
+});
+
+export const adminMfaSetupConfirmSchema = z.object({
+  body: z.object({
+    email: z.string().email(),
+    password: z.string().min(8),
+    totpCode: z.string().length(6, 'TOTP code must be 6 digits').regex(/^\d+$/),
+  }),
+  query: z.object({}).optional(),
+  params: z.object({}).optional(),
+});
+
 export const refreshTokenSchema = z.object({
   body: z.object({
     refreshToken: z.string().min(10, 'A refresh token is required'),
@@ -63,6 +82,8 @@ export const changePasswordSchema = z.object({
 
 export type RequestOtpInput = z.infer<typeof requestOtpSchema>['body'];
 export type VerifyOtpInput = z.infer<typeof verifyOtpSchema>['body'];
+export type AdminMfaSetupRequestInput = z.infer<typeof adminMfaSetupRequestSchema>['body'];
+export type AdminMfaSetupConfirmInput = z.infer<typeof adminMfaSetupConfirmSchema>['body'];
 export type DoctorLoginInput = z.infer<typeof doctorLoginSchema>['body'];
 export type AdminLoginInput = z.infer<typeof adminLoginSchema>['body'];
 export type RefreshTokenInput = z.infer<typeof refreshTokenSchema>['body'];

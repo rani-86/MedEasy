@@ -54,6 +54,18 @@ export const AuthController = {
     });
   }),
 
+  requestAdminMfaSetup: asyncHandler(async (req: Request, res: Response) => {
+    const { email, password } = req.body;
+    const result = await authService.requestAdminMfaSetup(email, password);
+    res.status(200).json({ data: result });
+  }),
+
+  confirmAdminMfaSetup: asyncHandler(async (req: Request, res: Response) => {
+    const { email, password, totpCode } = req.body;
+    await authService.confirmAdminMfaSetup(email, password, totpCode);
+    res.status(204).send();
+  }),
+
   refresh: asyncHandler(async (req: Request, res: Response) => {
     // Prefer the httpOnly cookie; fall back to a body-supplied token for non-browser clients
     // (e.g. the mobile app, which may not persist cookies the same way).

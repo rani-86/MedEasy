@@ -12,6 +12,9 @@ import { AccessTokenPayload, RefreshTokenPayload, TokenPair, UserRole } from './
 authenticator.options = { window: 2 };
 const BCRYPT_ROUNDS = 12;
 const REFRESH_TOKEN_REDIS_KEY = (userId: string) => `refresh:${userId}`;
+const ADMIN_TOTP_SECRET_KEY = (userId: string) => `admin:totp_secret:${userId}`;
+const ADMIN_TOTP_PENDING_KEY = (userId: string) => `admin:totp_pending:${userId}`;
+const MFA_SETUP_TTL_SECONDS = 10 * 60;
 
 export class AuthService {
   private readonly otpService = new OtpService();
@@ -114,7 +117,7 @@ export class AuthService {
       throw new UnauthorizedError('Invalid credentials');
     }
 
-    const totpSecret = await redisClient.get(`admin:totp_secret:${user.id}`);
+    const totpSecret = await redisClient.get(ADMIN_TOTP_SECRET_KEY(user.id));
     if (!totpSecret || !authenticator.verify({ token: totpCode, secret: totpSecret })) {
       throw new UnauthorizedError('Invalid MFA code');
     }
@@ -123,6 +126,46 @@ export class AuthService {
       hospitalId: user.hospitalId ?? undefined,
       scopes: ['admin:beds', 'admin:inventory', 'admin:doctors', 'admin:analytics'],
     });
+  }
+
+  // Two-step enrollment: generate a secret first (held "pending" with a TTL, not yet
+  // active), then only promote it to the real key once the admin proves they can
+  // actually produce a valid code from it. Without this split, a typo while scanning
+  // the QR code would silently lock the account out of its own login.
+  async requestAdminMfaSetup(email: string, password: string): Promise<{ secret: string; otpauthUrl: string }> {
+    const user = await this.verifyAdminPassword(email, password);
+
+    const secret = authenticator.generateSecret();
+    await redisClient.set(ADMIN_TOTP_PENDING_KEY(user.id), secret, 'EX', MFA_SETUP_TTL_SECONDS);
+
+    return { secret, otpauthUrl: authenticator.keyuri(user.email!, 'Medeasy', secret) };
+  }
+
+  async confirmAdminMfaSetup(email: string, password: string, totpCode: string): Promise<void> {
+    const user = await this.verifyAdminPassword(email, password);
+
+    const pendingSecret = await redisClient.get(ADMIN_TOTP_PENDING_KEY(user.id));
+    if (!pendingSecret || !authenticator.verify({ token: totpCode, secret: pendingSecret })) {
+      throw new UnauthorizedError('Invalid or expired MFA setup code — request a new one and try again.');
+    }
+
+    // No TTL on the real key — this is the credential adminLogin checks against indefinitely.
+    await redisClient.set(ADMIN_TOTP_SECRET_KEY(user.id), pendingSecret);
+    await redisClient.del(ADMIN_TOTP_PENDING_KEY(user.id));
+  }
+
+  private async verifyAdminPassword(email: string, password: string) {
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user || user.role !== 'admin') {
+      throw new UnauthorizedError('Invalid credentials');
+    }
+    if (!user.isActive) {
+      throw new ForbiddenError('This account has been deactivated.');
+    }
+    if (!user.passwordHash || !(await bcrypt.compare(password, user.passwordHash))) {
+      throw new UnauthorizedError('Invalid credentials');
+    }
+    return user;
   }
 
   // ---------------------------------------------------------------------

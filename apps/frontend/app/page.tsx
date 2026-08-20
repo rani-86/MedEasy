@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api/client';
 import { useAuthStore } from '@/lib/stores/authStore';
+import { Logo } from '@/components/Logo';
 
 export default function LoginPage() {
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
@@ -44,10 +45,16 @@ export default function LoginPage() {
 
   if (accessToken) {
     return (
-      <main className="flex min-h-screen items-center justify-center">
-        <div className="text-center space-y-4">
-          <p className="text-green-600 font-medium">Logged in successfully</p>
-          <Link href="/appointments" className="inline-block bg-black text-white rounded px-4 py-2">
+      <main className="flex min-h-screen items-center justify-center px-4">
+        <div className="card w-full max-w-sm p-8 text-center space-y-5">
+          <Logo size="lg" />
+          <div className="space-y-1">
+            <p className="badge badge-success">Logged in</p>
+            <p className="text-sm" style={{ color: 'var(--muted)' }}>
+              You&apos;re all set.
+            </p>
+          </div>
+          <Link href="/appointments" className="btn-primary w-full">
             Go to My Appointments
           </Link>
         </div>
@@ -56,56 +63,78 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center">
-      <div className="w-full max-w-sm space-y-4">
-        <h1 className="text-2xl font-semibold text-center">Medeasy — Patient Login</h1>
+    <main className="flex min-h-screen items-center justify-center px-4">
+      <div className="card w-full max-w-sm p-8 space-y-6">
+        <div className="flex flex-col items-center gap-3 text-center">
+          <Logo size="lg" />
+          <p className="text-sm" style={{ color: 'var(--muted)' }}>
+            Patient login
+          </p>
+        </div>
 
         {step === 'phone' && (
-          <>
-            <input
-              type="tel"
-              placeholder="+919000000001"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="w-full border rounded px-3 py-2"
-            />
-            <button
-              onClick={requestOtp}
-              disabled={loading}
-              className="w-full bg-black text-white rounded px-3 py-2 disabled:opacity-50"
-            >
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium" htmlFor="phone">
+                Mobile number
+              </label>
+              <input
+                id="phone"
+                type="tel"
+                placeholder="+919000000001"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="input"
+              />
+            </div>
+            <button onClick={requestOtp} disabled={loading} className="btn-primary w-full">
               {loading ? 'Sending...' : 'Send OTP'}
             </button>
-          </>
+          </div>
         )}
 
         {step === 'otp' && (
-          <>
+          <div className="space-y-3">
             {demoOtp ? (
-              <p className="text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+              <p className="text-sm rounded-lg px-3.5 py-2.5" style={{ background: 'var(--warning-soft)', color: 'var(--warning)' }}>
                 Demo mode — no SMS provider is configured, so here&apos;s your code: <strong>{demoOtp}</strong>
               </p>
             ) : (
-              <p className="text-sm text-gray-500">Check your backend terminal for the dev-mode OTP.</p>
+              <p className="text-sm" style={{ color: 'var(--muted)' }}>
+                Check your backend terminal for the dev-mode OTP.
+              </p>
             )}
-            <input
-              type="text"
-              placeholder="6-digit code"
-              value={otp}
-              onChange={(e) => setOtp(e.target.value)}
-              className="w-full border rounded px-3 py-2"
-            />
-            <button
-              onClick={verifyOtp}
-              disabled={loading}
-              className="w-full bg-black text-white rounded px-3 py-2 disabled:opacity-50"
-            >
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium" htmlFor="otp">
+                6-digit code
+              </label>
+              <input
+                id="otp"
+                type="text"
+                placeholder="123456"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                className="input"
+              />
+            </div>
+            <button onClick={verifyOtp} disabled={loading} className="btn-primary w-full">
               {loading ? 'Verifying...' : 'Verify'}
             </button>
-          </>
+          </div>
         )}
 
-        {error && <p className="text-red-600 text-sm">{error}</p>}
+        {error && (
+          <p className="text-sm rounded-lg px-3.5 py-2.5" style={{ background: 'var(--danger-soft)', color: 'var(--danger)' }}>
+            {error}
+          </p>
+        )}
+
+        <p className="text-center text-sm" style={{ color: 'var(--muted)' }}>
+          Doctor?{' '}
+          <Link href="/doctor/login" className="font-medium" style={{ color: 'var(--brand)' }}>
+            Log in here
+          </Link>
+        </p>
       </div>
     </main>
   );

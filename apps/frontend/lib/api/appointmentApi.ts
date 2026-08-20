@@ -43,4 +43,8 @@ export const appointmentApi = {
     const res = await apiClient.patch(`/appointments/${id}/reschedule`, { newSlotStart });
     return res.data.data;
   },
+  complete: async (id: string): Promise<Appointment> => {
+    const res = await apiClient.patch(`/appointments/${id}/complete`);
+    return res.data.data;
+  },
 };

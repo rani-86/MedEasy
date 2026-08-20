@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { useAuthStore } from '@/lib/stores/authStore';
 import { appointmentApi, Appointment } from '@/lib/api/appointmentApi';
 import { doctorApi, Doctor } from '@/lib/api/doctorApi';
+import { TopBar } from '@/components/TopBar';
+import { StatusBadge } from '@/components/StatusBadge';
 
 export default function AppointmentDetailPage() {
   const params = useParams<{ id: string }>();
@@ -80,66 +82,76 @@ export default function AppointmentDetailPage() {
   if (!accessToken) return null;
 
   return (
-    <main className="max-w-2xl mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Appointment Details</h1>
-        <Link href="/appointments" className="text-sm text-gray-500 hover:underline">
+    <>
+      <TopBar homeHref="/appointments">
+        <Link href="/appointments" className="font-medium" style={{ color: 'var(--muted)' }}>
           Back to My Appointments
         </Link>
-      </div>
+      </TopBar>
 
-      {loading && <p className="text-sm text-gray-500">Loading...</p>}
-      {error && <p className="text-red-600 text-sm">{error}</p>}
+      <main className="max-w-2xl mx-auto p-6 space-y-6">
+        <h1 className="text-2xl font-semibold">Appointment Details</h1>
 
-      {appointment && (
-        <section className="border rounded p-4 space-y-2">
-          <p className="font-medium">{doctor?.name ?? 'Unknown doctor'}</p>
-          {doctor && (
-            <p className="text-sm text-gray-500">
-              {doctor.specialty} &middot; {doctor.hospitalName}
-            </p>
-          )}
-          <p className="text-sm">
-            When: {new Date(appointment.slotStart).toLocaleString()} &ndash;{' '}
-            {new Date(appointment.slotEnd).toLocaleTimeString()}
+        {loading && <p className="text-sm" style={{ color: 'var(--muted)' }}>Loading...</p>}
+        {error && (
+          <p className="text-sm rounded-lg px-3.5 py-2.5" style={{ background: 'var(--danger-soft)', color: 'var(--danger)' }}>
+            {error}
           </p>
-          <p className="text-sm">Status: {appointment.status}</p>
-          <p className="text-xs text-gray-500">
-            Booked on {new Date(appointment.createdAt).toLocaleString()}
-          </p>
-        </section>
-      )}
+        )}
 
-      {appointment?.status === 'booked' && (
-        <section className="border rounded p-4 space-y-3">
-          <h2 className="font-medium">Manage this appointment</h2>
-          {actionError && <p className="text-red-600 text-sm">{actionError}</p>}
+        {appointment && (
+          <section className="card p-5 space-y-3">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="font-medium">{doctor?.name ?? 'Unknown doctor'}</p>
+                {doctor && (
+                  <p className="text-sm" style={{ color: 'var(--muted)' }}>
+                    {doctor.specialty} &middot; {doctor.hospitalName}
+                  </p>
+                )}
+              </div>
+              <StatusBadge status={appointment.status} />
+            </div>
+            <div style={{ borderTop: '1px solid var(--border)' }} className="pt-3 space-y-1">
+              <p className="text-sm">
+                <span style={{ color: 'var(--muted)' }}>When:</span>{' '}
+                {new Date(appointment.slotStart).toLocaleString()} &ndash;{' '}
+                {new Date(appointment.slotEnd).toLocaleTimeString()}
+              </p>
+              <p className="text-xs" style={{ color: 'var(--muted)' }}>
+                Booked on {new Date(appointment.createdAt).toLocaleString()}
+              </p>
+            </div>
+          </section>
+        )}
 
-          <div className="flex gap-2">
-            <input
-              type="datetime-local"
-              value={newSlotStart}
-              onChange={(e) => setNewSlotStart(e.target.value)}
-              className="flex-1 border rounded px-3 py-2"
-            />
-            <button
-              onClick={handleReschedule}
-              disabled={rescheduling}
-              className="bg-black text-white rounded px-4 py-2 disabled:opacity-50"
-            >
-              {rescheduling ? 'Rescheduling...' : 'Reschedule'}
+        {appointment?.status === 'booked' && (
+          <section className="card p-5 space-y-3">
+            <h2 className="font-medium">Manage this appointment</h2>
+            {actionError && (
+              <p className="text-sm rounded-lg px-3.5 py-2.5" style={{ background: 'var(--danger-soft)', color: 'var(--danger)' }}>
+                {actionError}
+              </p>
+            )}
+
+            <div className="flex gap-2">
+              <input
+                type="datetime-local"
+                value={newSlotStart}
+                onChange={(e) => setNewSlotStart(e.target.value)}
+                className="input flex-1"
+              />
+              <button onClick={handleReschedule} disabled={rescheduling} className="btn-primary shrink-0">
+                {rescheduling ? 'Rescheduling...' : 'Reschedule'}
+              </button>
+            </div>
+
+            <button onClick={handleCancel} disabled={cancelling} className="btn-danger w-full">
+              {cancelling ? 'Cancelling...' : 'Cancel Appointment'}
             </button>
-          </div>
-
-          <button
-            onClick={handleCancel}
-            disabled={cancelling}
-            className="w-full border border-red-600 text-red-600 rounded px-3 py-2 disabled:opacity-50"
-          >
-            {cancelling ? 'Cancelling...' : 'Cancel Appointment'}
-          </button>
-        </section>
-      )}
-    </main>
+          </section>
+        )}
+      </main>
+    </>
   );
 }

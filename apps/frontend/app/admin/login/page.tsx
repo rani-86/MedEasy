@@ -6,9 +6,10 @@ import { apiClient } from '@/lib/api/client';
 import { useAuthStore } from '@/lib/stores/authStore';
 import { Logo } from '@/components/Logo';
 
-export default function DoctorLoginPage() {
+export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [totpCode, setTotpCode] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const setAccessToken = useAuthStore((s) => s.setAccessToken);
@@ -19,7 +20,7 @@ export default function DoctorLoginPage() {
     setError('');
     setLoading(true);
     try {
-      const res = await apiClient.post('/auth/login/doctor', { email, password });
+      const res = await apiClient.post('/auth/login/admin', { email, password, totpCode });
       setAccessToken(res.data.data.accessToken);
     } catch (err: any) {
       setError(err.response?.data?.error?.message ?? 'Something went wrong');
@@ -31,17 +32,12 @@ export default function DoctorLoginPage() {
   if (accessToken) {
     return (
       <main className="flex min-h-screen items-center justify-center px-4">
-        <div className="card w-full max-w-sm p-8 text-center space-y-5">
+        <div className="card w-full max-w-sm p-8 text-center space-y-3">
           <Logo size="lg" />
-          <div className="space-y-1">
-            <p className="badge badge-success">Logged in</p>
-            <p className="text-sm" style={{ color: 'var(--muted)' }}>
-              You&apos;re all set.
-            </p>
-          </div>
-          <Link href="/doctor/queue" className="btn-primary w-full">
-            Go to My Queue
-          </Link>
+          <p className="badge badge-success">Logged in</p>
+          <p className="text-sm" style={{ color: 'var(--muted)' }}>
+            You&apos;re authenticated as an admin.
+          </p>
         </div>
       </main>
     );
@@ -53,7 +49,7 @@ export default function DoctorLoginPage() {
         <div className="flex flex-col items-center gap-3 text-center">
           <Logo size="lg" />
           <p className="text-sm" style={{ color: 'var(--muted)' }}>
-            Doctor login
+            Admin login
           </p>
         </div>
 
@@ -84,6 +80,20 @@ export default function DoctorLoginPage() {
               className="input"
             />
           </div>
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium" htmlFor="totp">
+              Authenticator code
+            </label>
+            <input
+              id="totp"
+              type="text"
+              inputMode="numeric"
+              placeholder="123456"
+              value={totpCode}
+              onChange={(e) => setTotpCode(e.target.value)}
+              className="input"
+            />
+          </div>
           <button type="submit" disabled={loading} className="btn-primary w-full">
             {loading ? 'Logging in...' : 'Log In'}
           </button>
@@ -96,9 +106,9 @@ export default function DoctorLoginPage() {
         )}
 
         <p className="text-center text-sm" style={{ color: 'var(--muted)' }}>
-          Patient?{' '}
-          <Link href="/" className="font-medium" style={{ color: 'var(--brand)' }}>
-            Log in here
+          Haven&apos;t set up an authenticator yet?{' '}
+          <Link href="/admin/mfa-setup" className="font-medium" style={{ color: 'var(--brand)' }}>
+            Set up MFA
           </Link>
         </p>
       </form>
