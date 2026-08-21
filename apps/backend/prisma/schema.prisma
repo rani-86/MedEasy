@@ -43,6 +43,11 @@ model PatientProfile {
   id        String   @id @default(uuid())
   userId    String   @unique @map("user_id")
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  age       Int?
+  // Deliberately stores the same vocabulary as Doctor.specialty rather than a separate
+  // "illness" taxonomy that would need its own translation layer — the patient picks from
+  // a specialty-aligned list, so matching them to a doctor is a direct filter, not a lookup.
+  illnessType String? @map("illness_type")
   createdAt DateTime @default(now()) @map("created_at")
 
   appointments Appointment[]

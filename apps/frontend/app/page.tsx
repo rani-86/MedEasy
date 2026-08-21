@@ -2,11 +2,14 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/api/client';
 import { useAuthStore } from '@/lib/stores/authStore';
+import { patientApi } from '@/lib/api/patientApi';
 import { Logo } from '@/components/Logo';
 
 export default function LoginPage() {
+  const router = useRouter();
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
@@ -36,6 +39,8 @@ export default function LoginPage() {
     try {
       const res = await apiClient.post('/auth/otp/verify', { phone, otp });
       setAccessToken(res.data.data.accessToken);
+      const profile = await patientApi.getMe();
+      router.push(profile.profileComplete ? '/appointments' : '/complete-profile');
     } catch (err: any) {
       setError(err.response?.data?.error?.message ?? 'Something went wrong');
     } finally {
@@ -48,15 +53,7 @@ export default function LoginPage() {
       <main className="flex min-h-screen items-center justify-center px-4">
         <div className="card w-full max-w-sm p-8 text-center space-y-5">
           <Logo size="lg" />
-          <div className="space-y-1">
-            <p className="badge badge-success">Logged in</p>
-            <p className="text-sm" style={{ color: 'var(--muted)' }}>
-              You&apos;re all set.
-            </p>
-          </div>
-          <Link href="/appointments" className="btn-primary w-full">
-            Go to My Appointments
-          </Link>
+          <p className="badge badge-success">Logged in</p>
         </div>
       </main>
     );
