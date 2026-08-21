@@ -66,6 +66,10 @@ model Hospital {
   // No approval UI exists yet — a new hospital sits unverified until this is flipped directly
   // in the database, same as how Doctor.licenseVerified is handled today.
   verified       Boolean  @default(false)
+  // Nullable rather than backfilled with a placeholder — a hospital with no coordinates
+  // just doesn't show up in nearest-hospital search instead of showing up at a fake location.
+  latitude       Float?
+  longitude      Float?
   createdAt      DateTime @default(now()) @map("created_at")
 
   doctors      Doctor[]

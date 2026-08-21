@@ -1,6 +1,7 @@
 import { prisma } from '../../config/db';
 import { hashPassword } from '../auth/auth.service';
-import { RegisterHospitalInput } from './hospital.validation';
+import { haversineDistanceKm } from '../../common/utils/geo';
+import { RegisterHospitalInput, NearbyHospitalsQuery } from './hospital.validation';
 
 export class HospitalService {
   // Creates the hospital and its first admin together — unverified until someone flips
@@ -18,6 +19,8 @@ export class HospitalService {
           address: input.address,
           registrationId: input.registrationId,
           verified: false,
+          latitude: input.latitude,
+          longitude: input.longitude,
         },
       });
       await tx.user.create({
@@ -38,5 +41,53 @@ export class HospitalService {
       registrationId: hospital.registrationId,
       verified: hospital.verified,
     };
+  }
+
+  // Unverified hospitals and ones with no coordinates on file simply don't appear — there's
+  // no partial/fallback ranking, since a distance we can't actually compute is worse than
+  // just leaving the hospital out.
+  async findNearby(query: NearbyHospitalsQuery) {
+    const hospitals = await prisma.hospital.findMany({
+      where: { verified: true, latitude: { not: null }, longitude: { not: null } },
+    });
+    if (hospitals.length === 0) return [];
+
+    const hospitalIds = hospitals.map((h) => h.id);
+
+    const [bedCounts, doctorCounts] = await Promise.all([
+      prisma.bed.groupBy({
+        by: ['hospitalId', 'status'],
+        where: { hospitalId: { in: hospitalIds } },
+        _count: true,
+      }),
+      prisma.doctor.groupBy({
+        by: ['hospitalId'],
+        where: {
+          hospitalId: { in: hospitalIds },
+          licenseVerified: true,
+          ...(query.illnessType ? { specialty: query.illnessType } : {}),
+        },
+        _count: true,
+      }),
+    ]);
+
+    return hospitals
+      .map((hospital) => {
+        const hospitalBedCounts = bedCounts.filter((b) => b.hospitalId === hospital.id);
+        const totalBeds = hospitalBedCounts.reduce((sum, b) => sum + b._count, 0);
+        const availableBeds = hospitalBedCounts.find((b) => b.status === 'vacant')?._count ?? 0;
+        const matchingDoctors = doctorCounts.find((d) => d.hospitalId === hospital.id)?._count ?? 0;
+
+        return {
+          id: hospital.id,
+          name: hospital.name,
+          address: hospital.address,
+          distanceKm: Math.round(haversineDistanceKm(query.lat, query.lng, hospital.latitude!, hospital.longitude!) * 10) / 10,
+          totalBeds,
+          availableBeds,
+          matchingDoctors,
+        };
+      })
+      .sort((a, b) => a.distanceKm - b.distanceKm);
   }
 }

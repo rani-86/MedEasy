@@ -90,6 +90,9 @@ function AppointmentsPageContent() {
   return (
     <>
       <TopBar homeHref="/appointments">
+        <Link href="/hospitals/near-me" className="font-medium" style={{ color: 'var(--muted)' }}>
+          Hospitals Near Me
+        </Link>
         <Link href="/doctors" className="font-medium" style={{ color: 'var(--muted)' }}>
           Find a Doctor
         </Link>

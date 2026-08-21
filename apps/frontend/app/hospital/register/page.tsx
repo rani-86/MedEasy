@@ -2,13 +2,16 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { apiClient } from '@/lib/api/client';
+import { hospitalApi } from '@/lib/api/hospitalApi';
 import { Logo } from '@/components/Logo';
 
 export default function HospitalRegisterPage() {
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
   const [registrationId, setRegistrationId] = useState('');
+  const [latitude, setLatitude] = useState('');
+  const [longitude, setLongitude] = useState('');
+  const [locating, setLocating] = useState(false);
   const [adminName, setAdminName] = useState('');
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
@@ -16,15 +19,37 @@ export default function HospitalRegisterPage() {
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
 
+  function useCurrentLocation() {
+    setError('');
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLatitude(String(pos.coords.latitude));
+        setLongitude(String(pos.coords.longitude));
+        setLocating(false);
+      },
+      () => {
+        setError('Could not get your location — enter coordinates manually instead.');
+        setLocating(false);
+      },
+    );
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
+    if (!latitude || !longitude) {
+      setError('Set the hospital location first');
+      return;
+    }
     setLoading(true);
     try {
-      await apiClient.post('/hospitals/register', {
+      await hospitalApi.register({
         name,
         address,
         registrationId,
+        latitude: Number(latitude),
+        longitude: Number(longitude),
         adminName,
         adminEmail,
         adminPassword,
@@ -97,6 +122,38 @@ export default function HospitalRegisterPage() {
               onChange={(e) => setRegistrationId(e.target.value)}
               className="input"
             />
+          </div>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium">Location</label>
+              <button
+                type="button"
+                onClick={useCurrentLocation}
+                disabled={locating}
+                className="text-xs font-medium"
+                style={{ color: 'var(--brand)' }}
+              >
+                {locating ? 'Locating...' : 'Use my current location'}
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                type="number"
+                step="any"
+                placeholder="Latitude"
+                value={latitude}
+                onChange={(e) => setLatitude(e.target.value)}
+                className="input"
+              />
+              <input
+                type="number"
+                step="any"
+                placeholder="Longitude"
+                value={longitude}
+                onChange={(e) => setLongitude(e.target.value)}
+                className="input"
+              />
+            </div>
           </div>
           <hr style={{ borderColor: 'var(--border)' }} />
           <div className="space-y-1.5">

@@ -9,13 +9,15 @@ async function main() {
 
   const hospital = await prisma.hospital.upsert({
     where: { id: '11111111-1111-1111-1111-111111111111' },
-    update: { registrationId: 'APEX-HOSP-001', verified: true },
+    update: { registrationId: 'APEX-HOSP-001', verified: true, latitude: 25.6146, longitude: 85.1189 },
     create: {
       id: '11111111-1111-1111-1111-111111111111',
       name: 'Apex Multispecialty Hospital',
       address: 'Boring Road, Patna, Bihar',
       registrationId: 'APEX-HOSP-001',
       verified: true,
+      latitude: 25.6146,
+      longitude: 85.1189,
     },
   });
 
