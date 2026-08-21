@@ -21,4 +21,9 @@ export const PatientController = {
     const profile = await patientService.updateMe(req.user.patientProfileId, req.user.sub, req.body);
     res.status(200).json({ data: profile });
   }),
+
+  lookupByPhone: asyncHandler(async (req: Request, res: Response) => {
+    const profile = await patientService.lookupByPhone(req.query.phone as string);
+    res.status(200).json({ data: profile });
+  }),
 };

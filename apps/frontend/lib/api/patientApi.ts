@@ -26,4 +26,9 @@ export const patientApi = {
     const res = await apiClient.patch('/patients/me', input);
     return res.data.data;
   },
+
+  lookupByPhone: async (phone: string): Promise<PatientProfile> => {
+    const res = await apiClient.get('/patients/lookup', { params: { phone } });
+    return res.data.data;
+  },
 };

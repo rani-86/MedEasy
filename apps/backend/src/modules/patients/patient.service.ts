@@ -32,6 +32,19 @@ export class PatientService {
     return this.getMe(profile.id);
   }
 
+  // Front-desk lookup for admission — a hospital staff member has a patient standing in
+  // front of them and only their phone number to go on, not a patientProfileId.
+  async lookupByPhone(phone: string) {
+    const profile = await prisma.patientProfile.findFirst({
+      where: { user: { phone } },
+      include: { user: true },
+    });
+    if (!profile) {
+      throw new NotFoundError('No patient found with that phone number');
+    }
+    return this.toPatientSummary(profile);
+  }
+
   private toPatientSummary(profile: {
     id: string;
     age: number | null;

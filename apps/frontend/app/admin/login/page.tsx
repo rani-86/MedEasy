@@ -32,12 +32,12 @@ export default function AdminLoginPage() {
   if (accessToken) {
     return (
       <main className="flex min-h-screen items-center justify-center px-4">
-        <div className="card w-full max-w-sm p-8 text-center space-y-3">
+        <div className="card w-full max-w-sm p-8 text-center space-y-5">
           <Logo size="lg" />
           <p className="badge badge-success">Logged in</p>
-          <p className="text-sm" style={{ color: 'var(--muted)' }}>
-            You&apos;re authenticated as an admin.
-          </p>
+          <Link href="/admin/beds" className="btn-primary w-full">
+            Go to Bed Management
+          </Link>
         </div>
       </main>
     );

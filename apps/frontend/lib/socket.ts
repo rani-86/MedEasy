@@ -15,3 +15,10 @@ export function createQueueSocket(accessToken: string): Socket {
     autoConnect: false,
   });
 }
+
+export function createBedsSocket(accessToken: string): Socket {
+  return io(`${socketOrigin()}/beds`, {
+    auth: { token: accessToken },
+    autoConnect: false,
+  });
+}
