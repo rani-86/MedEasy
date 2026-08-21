@@ -1,6 +1,10 @@
 # Medeasy
 
-A multi-sided healthcare platform connecting patients, doctors, and hospital administrators — appointment booking, hospital discovery, live bed/queue visibility, and hospital operations (inventory, analytics).
+A hospital resource management platform addressing three problems: long OPD waiting queues, no
+real-time visibility into bed availability, and slow patient admission — with a city-wide,
+multi-hospital network as the intended endpoint. Patients, doctors, and hospital admins each get
+a purpose-built flow rather than one generic "user" role. See [Roadmap](#roadmap-vs-problem-statement)
+for how much of that is actually built versus still ahead.
 
 ## Live demo
 
@@ -42,11 +46,33 @@ Read in this order:
 | Backend: Beds (state machine + real-time via Socket.IO) | ✅ Implemented (`apps/backend/src/modules/beds`) |
 | Backend: Doctors (search/list) | ✅ Implemented (`apps/backend/src/modules/doctors`) |
 | Backend: Real-time doctor queue (`/queue` Socket.IO namespace) | ✅ Implemented (`apps/backend/src/sockets`) |
+| Backend: Patient intake (age/illness type/email, `patients` module) | ✅ Implemented (`apps/backend/src/modules/patients`) |
+| Backend: Hospital self-registration + manual verification | ✅ Implemented (`apps/backend/src/modules/hospitals`) |
+| Backend: Nearest-hospital search (geolocation + illness-specialty match) | ⬜ Not yet built — next up |
+| Backend: Bed admission UI-facing endpoints | ⬜ Backend allocate() logic exists; no dedicated admission flow/UI |
+| Backend: Emergency button (real geolocation alert, no fake ML dispatch) | ⬜ Not yet built |
 | Backend: Inventory | ⬜ Not yet built |
-| Frontend: Patient OTP login, doctor search, booking, appointment detail | ✅ Implemented (`apps/frontend/app`) |
-| Frontend: Doctor login + live queue view | ✅ Implemented (`apps/frontend/app/doctor`) |
-| Frontend: Admin/bed views | ⬜ Not yet built |
+| Frontend: Patient OTP login → complete-profile → doctor search, booking, appointment detail | ✅ Implemented (`apps/frontend/app`) |
+| Frontend: Doctor login + live queue view + mark complete | ✅ Implemented (`apps/frontend/app/doctor`) |
+| Frontend: Admin login (MFA) + hospital registration | ✅ Implemented (`apps/frontend/app/admin`, `apps/frontend/app/hospital`) |
+| Frontend: Admin bed dashboard / admission UI | ⬜ Not yet built |
 | ML service | ⬜ Not yet scaffolded (deferred until real usage data exists) |
+
+## Roadmap vs. problem statement
+
+The original problem statement (OPD queuing + bed availability + patient admission, with a
+city-wide multi-hospital network) is bigger than a doctor-first booking app, and some of it
+(trained ML models, real ambulance-service integration) isn't realistic to build for real in this
+project — those stay as described vision, not code. Build order for what *is* real:
+
+1. ✅ Patient intake (age, illness type, email) — collected on first login, needed by everything below
+2. ✅ Hospital self-registration + verification — mirrors `Doctor.licenseVerified`'s manual-flag pattern, no approval UI
+3. ⬜ **Next**: nearest-hospitals search — real browser geolocation + distance calc, illness-type filtered against `Doctor.specialty` (a direct lookup, not literal ML)
+4. ⬜ Bed admission UI — `bed.service.ts`'s `allocate()` already creates a `BedAdmission` row; it just has no screen
+5. ⬜ (Optional) Emergency button — real geolocation + an alert pushed via the existing Socket.IO infrastructure to the nearest hospital; no automated ambulance routing
+
+Explicitly out of scope: an `Ambulance` entity/routing, `MedicalRecords` (compliance-heavy), and
+any literal trained ML model.
 
 ## Getting started (backend)
 
