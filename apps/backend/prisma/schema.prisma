@@ -57,10 +57,16 @@ model PatientProfile {
 }
 
 model Hospital {
-  id        String   @id @default(uuid())
-  name      String
-  address   String
-  createdAt DateTime @default(now()) @map("created_at")
+  id             String   @id @default(uuid())
+  name           String
+  address        String
+  // The hospital-provided identifier from registration — distinct from our internal uuid,
+  // mirrors Doctor.licenseNo as "the real-world credential this record was verified against."
+  registrationId String   @unique @map("registration_id")
+  // No approval UI exists yet — a new hospital sits unverified until this is flipped directly
+  // in the database, same as how Doctor.licenseVerified is handled today.
+  verified       Boolean  @default(false)
+  createdAt      DateTime @default(now()) @map("created_at")
 
   doctors      Doctor[]
   appointments Appointment[]

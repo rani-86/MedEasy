@@ -122,9 +122,17 @@ export class AuthService {
       throw new UnauthorizedError('Invalid MFA code');
     }
 
+    // Same restricted-scope pattern as an unverified doctor: a token is still issued so the
+    // admin can see their onboarding/verification status, but they can't touch bed or
+    // doctor data at a hospital nobody has verified yet.
+    const hospital = user.hospitalId ? await prisma.hospital.findUnique({ where: { id: user.hospitalId } }) : null;
+    const scopes = hospital?.verified
+      ? ['admin:beds', 'admin:inventory', 'admin:doctors', 'admin:analytics']
+      : ['onboarding:read'];
+
     return this.issueTokenPair(user.id, 'admin', {
       hospitalId: user.hospitalId ?? undefined,
-      scopes: ['admin:beds', 'admin:inventory', 'admin:doctors', 'admin:analytics'],
+      scopes,
     });
   }
 
@@ -210,9 +218,12 @@ export class AuthService {
         scopes,
       });
     }
+    const hospital = user.hospitalId ? await prisma.hospital.findUnique({ where: { id: user.hospitalId } }) : null;
     return this.issueTokenPair(user.id, 'admin', {
       hospitalId: user.hospitalId ?? undefined,
-      scopes: ['admin:beds', 'admin:inventory', 'admin:doctors', 'admin:analytics'],
+      scopes: hospital?.verified
+        ? ['admin:beds', 'admin:inventory', 'admin:doctors', 'admin:analytics']
+        : ['onboarding:read'],
     });
   }
 

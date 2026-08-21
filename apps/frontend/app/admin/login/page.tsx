@@ -111,6 +111,12 @@ export default function AdminLoginPage() {
             Set up MFA
           </Link>
         </p>
+        <p className="text-center text-sm" style={{ color: 'var(--muted)' }}>
+          New hospital?{' '}
+          <Link href="/hospital/register" className="font-medium" style={{ color: 'var(--brand)' }}>
+            Register here
+          </Link>
+        </p>
       </form>
     </main>
   );
