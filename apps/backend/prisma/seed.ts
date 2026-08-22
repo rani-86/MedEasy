@@ -42,6 +42,47 @@ async function main() {
     },
   });
 
+  // One doctor per specialty besides Cardiology, so specialty-matched search and nearest-hospital
+  // results have something real to show in every category — all fictional, at the one hospital
+  // this demo actually seeds, not real named individuals pulled from anywhere.
+  const otherDoctors: { name: string; email: string; specialty: string; licenseNo: string; avgConsultMinutes: number }[] = [
+    { name: 'Dr. Neha Verma', email: 'neha.verma@apex.com', specialty: 'Dermatology', licenseNo: 'MCI-BR-20192001', avgConsultMinutes: 15 },
+    { name: 'Dr. Rajesh Kumar', email: 'rajesh.kumar@apex.com', specialty: 'ENT', licenseNo: 'MCI-BR-20192002', avgConsultMinutes: 15 },
+    { name: 'Dr. Alok Mishra', email: 'alok.mishra@apex.com', specialty: 'General Medicine', licenseNo: 'MCI-BR-20192003', avgConsultMinutes: 15 },
+    { name: 'Dr. Kavita Reddy', email: 'kavita.reddy@apex.com', specialty: 'Gynecology', licenseNo: 'MCI-BR-20192004', avgConsultMinutes: 20 },
+    { name: 'Dr. Arjun Mehta', email: 'arjun.mehta@apex.com', specialty: 'Neurology', licenseNo: 'MCI-BR-20192005', avgConsultMinutes: 25 },
+    { name: 'Dr. Sunita Rao', email: 'sunita.rao@apex.com', specialty: 'Oncology', licenseNo: 'MCI-BR-20192006', avgConsultMinutes: 30 },
+    { name: 'Dr. Vikram Chauhan', email: 'vikram.chauhan@apex.com', specialty: 'Ophthalmology', licenseNo: 'MCI-BR-20192007', avgConsultMinutes: 15 },
+    { name: 'Dr. Manoj Gupta', email: 'manoj.gupta@apex.com', specialty: 'Orthopedics', licenseNo: 'MCI-BR-20192008', avgConsultMinutes: 20 },
+    { name: 'Dr. Priya Nair', email: 'priya.nair@apex.com', specialty: 'Pediatrics', licenseNo: 'MCI-BR-20192009', avgConsultMinutes: 15 },
+    { name: 'Dr. Rohan Bhatt', email: 'rohan.bhatt@apex.com', specialty: 'Psychiatry', licenseNo: 'MCI-BR-20192010', avgConsultMinutes: 30 },
+    { name: 'Dr. Deepak Joshi', email: 'deepak.joshi@apex.com', specialty: 'Pulmonology', licenseNo: 'MCI-BR-20192011', avgConsultMinutes: 20 },
+    { name: 'Dr. Sanjay Chatterjee', email: 'sanjay.chatterjee@apex.com', specialty: 'Urology', licenseNo: 'MCI-BR-20192012', avgConsultMinutes: 20 },
+  ];
+
+  for (const d of otherDoctors) {
+    await prisma.user.upsert({
+      where: { email: d.email },
+      update: {},
+      create: {
+        role: 'doctor',
+        name: d.name,
+        email: d.email,
+        passwordHash: doctorPasswordHash,
+        verifiedAt: new Date(),
+        doctor: {
+          create: {
+            hospitalId: hospital.id,
+            specialty: d.specialty,
+            licenseNo: d.licenseNo,
+            licenseVerified: true,
+            avgConsultMinutes: d.avgConsultMinutes,
+          },
+        },
+      },
+    });
+  }
+
   await prisma.user.upsert({
     where: { email: 'suresh.p@apex.com' },
     update: { hospitalId: hospital.id },
