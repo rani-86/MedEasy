@@ -1,35 +1,47 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/lib/stores/authStore';
 import { doctorApi, Doctor } from '@/lib/api/doctorApi';
 import { TopBar } from '@/components/TopBar';
 
 export default function DoctorsPage() {
+  return (
+    <Suspense fallback={null}>
+      <DoctorsPageContent />
+    </Suspense>
+  );
+}
+
+function DoctorsPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const accessToken = useAuthStore((s) => s.accessToken);
 
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const [search, setSearch] = useState('');
+  // A specialty arriving via the URL (e.g. from "Hospitals Near Me") pre-fills the search box
+  // and drives the initial, exact-match filtered load — after that it's just free-text search.
+  const initialSpecialty = searchParams.get('specialty') ?? '';
+  const [search, setSearch] = useState(initialSpecialty);
 
   useEffect(() => {
     if (!accessToken) {
       router.push('/');
       return;
     }
-    loadDoctors();
+    loadDoctors(initialSpecialty || undefined, initialSpecialty || undefined);
   }, [accessToken]);
 
-  async function loadDoctors(searchTerm?: string) {
+  async function loadDoctors(searchTerm?: string, specialty?: string) {
     setLoading(true);
     setError('');
     try {
-      const result = await doctorApi.list(searchTerm);
+      const result = await doctorApi.list(searchTerm, specialty);
       setDoctors(result.data);
     } catch (err: any) {
       const apiError = err.response?.data?.error;

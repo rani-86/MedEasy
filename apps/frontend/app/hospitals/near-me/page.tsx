@@ -140,7 +140,10 @@ export default function NearMeHospitalsPage() {
                   </span>
                 )}
               </div>
-              <Link href="/doctors" className="btn-secondary w-full text-sm">
+              <Link
+                href={illnessType ? `/doctors?specialty=${encodeURIComponent(illnessType)}` : '/doctors'}
+                className="btn-secondary w-full text-sm"
+              >
                 View doctors
               </Link>
             </li>

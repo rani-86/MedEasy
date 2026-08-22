@@ -17,8 +17,8 @@ export interface PaginationMeta {
 }
 
 export const doctorApi = {
-  list: async (search?: string): Promise<{ data: Doctor[]; meta: PaginationMeta }> => {
-    const res = await apiClient.get('/doctors', { params: search ? { search } : {} });
+  list: async (search?: string, specialty?: string): Promise<{ data: Doctor[]; meta: PaginationMeta }> => {
+    const res = await apiClient.get('/doctors', { params: { ...(search ? { search } : {}), ...(specialty ? { specialty } : {}) } });
     return res.data;
   },
 
