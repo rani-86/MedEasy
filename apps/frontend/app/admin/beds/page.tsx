@@ -29,7 +29,7 @@ export default function AdminBedsPage() {
   const [acknowledgingId, setAcknowledgingId] = useState<string | null>(null);
 
   const [admittingBedId, setAdmittingBedId] = useState<string | null>(null);
-  const [phone, setPhone] = useState('');
+  const [phone, setPhone] = useState('+91');
   const [foundPatient, setFoundPatient] = useState<PatientProfile | null>(null);
   const [admitError, setAdmitError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -95,7 +95,7 @@ export default function AdminBedsPage() {
 
   function startAdmit(bedId: string) {
     setAdmittingBedId(bedId);
-    setPhone('');
+    setPhone('+91');
     setFoundPatient(null);
     setAdmitError('');
   }

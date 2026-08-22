@@ -11,7 +11,7 @@ import { Logo } from '@/components/Logo';
 export default function LoginPage() {
   const router = useRouter();
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
-  const [phone, setPhone] = useState('');
+  const [phone, setPhone] = useState('+91');
   const [otp, setOtp] = useState('');
   const [demoOtp, setDemoOtp] = useState<string | null>(null);
   const [error, setError] = useState('');
