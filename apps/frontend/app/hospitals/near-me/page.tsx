@@ -8,6 +8,7 @@ import { hospitalApi, NearbyHospital } from '@/lib/api/hospitalApi';
 import { patientApi } from '@/lib/api/patientApi';
 import { ILLNESS_TYPES } from '@/lib/illnessTypes';
 import { TopBar } from '@/components/TopBar';
+import { EmergencyButton } from '@/components/EmergencyButton';
 
 export default function NearMeHospitalsPage() {
   const router = useRouter();
@@ -74,6 +75,7 @@ export default function NearMeHospitalsPage() {
 
   return (
     <>
+      <EmergencyButton />
       <TopBar homeHref="/appointments">
         <Link href="/appointments" className="font-medium" style={{ color: 'var(--muted)' }}>
           My Appointments

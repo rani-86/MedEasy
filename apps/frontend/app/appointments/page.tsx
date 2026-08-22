@@ -7,6 +7,7 @@ import { useAuthStore } from '@/lib/stores/authStore';
 import { appointmentApi, Appointment } from '@/lib/api/appointmentApi';
 import { TopBar } from '@/components/TopBar';
 import { StatusBadge } from '@/components/StatusBadge';
+import { EmergencyButton } from '@/components/EmergencyButton';
 
 export default function AppointmentsPage() {
   return (
@@ -89,6 +90,7 @@ function AppointmentsPageContent() {
 
   return (
     <>
+      <EmergencyButton />
       <TopBar homeHref="/appointments">
         <Link href="/hospitals/near-me" className="font-medium" style={{ color: 'var(--muted)' }}>
           Hospitals Near Me

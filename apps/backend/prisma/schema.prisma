@@ -52,6 +52,7 @@ model PatientProfile {
 
   appointments Appointment[]
   bedAdmissions BedAdmission[]
+  emergencyRequests EmergencyRequest[]
 
   @@map("patient_profiles")
 }
@@ -75,6 +76,7 @@ model Hospital {
   doctors      Doctor[]
   appointments Appointment[]
   beds         Bed[]
+  emergencyRequests EmergencyRequest[]
 
   @@map("hospitals")
 }
@@ -162,4 +164,28 @@ model BedAdmission {
   @@index([patientId, admittedAt])
   @@index([bedId])
   @@map("bed_admissions")
+}
+
+enum EmergencyStatus {
+  pending
+  acknowledged
+  resolved
+}
+
+model EmergencyRequest {
+  id            String           @id @default(uuid())
+  patientId     String           @map("patient_id")
+  patient       PatientProfile   @relation(fields: [patientId], references: [id])
+  // The nearest verified hospital at the moment the alert was raised — recorded, not just
+  // looked up live, since which hospital was nearest is itself part of the incident record.
+  hospitalId    String           @map("hospital_id")
+  hospital      Hospital         @relation(fields: [hospitalId], references: [id])
+  latitude      Float
+  longitude     Float
+  status        EmergencyStatus  @default(pending)
+  createdAt     DateTime         @default(now()) @map("created_at")
+  acknowledgedAt DateTime?       @map("acknowledged_at")
+
+  @@index([hospitalId, status])
+  @@map("emergency_requests")
 }

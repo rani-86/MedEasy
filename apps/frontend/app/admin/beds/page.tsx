@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/stores/authStore';
 import { bedApi, Bed } from '@/lib/api/bedApi';
 import { patientApi, PatientProfile } from '@/lib/api/patientApi';
+import { emergencyApi, EmergencyRequestItem } from '@/lib/api/emergencyApi';
 import { createBedsSocket } from '@/lib/socket';
 import { TopBar } from '@/components/TopBar';
 
@@ -24,6 +25,9 @@ export default function AdminBedsPage() {
   const [error, setError] = useState('');
   const [connected, setConnected] = useState(false);
 
+  const [emergencies, setEmergencies] = useState<EmergencyRequestItem[]>([]);
+  const [acknowledgingId, setAcknowledgingId] = useState<string | null>(null);
+
   const [admittingBedId, setAdmittingBedId] = useState<string | null>(null);
   const [phone, setPhone] = useState('');
   const [foundPatient, setFoundPatient] = useState<PatientProfile | null>(null);
@@ -36,11 +40,15 @@ export default function AdminBedsPage() {
       return;
     }
     load();
+    loadEmergencies();
 
     const socket = createBedsSocket(accessToken);
     socket.on('connect', () => setConnected(true));
     socket.on('disconnect', () => setConnected(false));
     socket.on('bed:status_changed', () => load());
+    // Same /beds room the bed dashboard already listens on — an incoming emergency alert
+    // just refetches the list rather than trying to splice one event into local state.
+    socket.on('emergency:new', () => loadEmergencies());
     socket.connect();
 
     return () => {
@@ -60,6 +68,28 @@ export default function AdminBedsPage() {
       );
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadEmergencies() {
+    try {
+      const data = await emergencyApi.list();
+      setEmergencies(data.filter((e) => e.status === 'pending'));
+    } catch {
+      // Same permission gate as beds (admin:beds scope) — the beds load() call above
+      // already surfaces the "not verified yet" error, no need to duplicate it here.
+    }
+  }
+
+  async function handleAcknowledge(id: string) {
+    setAcknowledgingId(id);
+    try {
+      await emergencyApi.acknowledge(id);
+      await loadEmergencies();
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message ?? 'Could not acknowledge this alert');
+    } finally {
+      setAcknowledgingId(null);
     }
   }
 
@@ -139,6 +169,46 @@ export default function AdminBedsPage() {
 
       <main className="max-w-2xl mx-auto p-6 space-y-6">
         <h1 className="text-2xl font-semibold">Bed Management</h1>
+
+        {emergencies.length > 0 && (
+          <section className="space-y-2">
+            <h2 className="font-medium" style={{ color: 'var(--danger)' }}>
+              🚨 {emergencies.length} active emergency alert{emergencies.length === 1 ? '' : 's'}
+            </h2>
+            <ul className="space-y-2">
+              {emergencies.map((e) => (
+                <li
+                  key={e.id}
+                  className="card p-4 flex items-center justify-between gap-4"
+                  style={{ borderColor: 'var(--danger)' }}
+                >
+                  <div>
+                    <p className="text-sm font-medium">{e.patientName}</p>
+                    <p className="text-xs" style={{ color: 'var(--muted)' }}>
+                      {e.patientPhone ?? 'No phone on file'} · {new Date(e.createdAt).toLocaleTimeString()}
+                    </p>
+                    <a
+                      href={`https://www.google.com/maps?q=${e.latitude},${e.longitude}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs font-medium"
+                      style={{ color: 'var(--brand)' }}
+                    >
+                      View location
+                    </a>
+                  </div>
+                  <button
+                    onClick={() => handleAcknowledge(e.id)}
+                    disabled={acknowledgingId === e.id}
+                    className="btn-danger shrink-0 text-xs px-3 py-1.5"
+                  >
+                    {acknowledgingId === e.id ? 'Acknowledging...' : 'Acknowledge'}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         {loading && <p className="text-sm" style={{ color: 'var(--muted)' }}>Loading...</p>}
         {error && (

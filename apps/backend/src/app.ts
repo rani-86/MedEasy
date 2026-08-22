@@ -12,6 +12,7 @@ import bedRoutes from './modules/beds/bed.routes';
 import doctorRoutes from './modules/doctors/doctor.routes';
 import patientRoutes from './modules/patients/patient.routes';
 import hospitalRoutes from './modules/hospitals/hospital.routes';
+import emergencyRoutes from './modules/emergencies/emergency.routes';
 
 export function createApp(): Application {
   const app = express();
@@ -34,6 +35,7 @@ export function createApp(): Application {
   app.use('/api/v1/doctors', doctorRoutes);
   app.use('/api/v1/patients', patientRoutes);
   app.use('/api/v1/hospitals', hospitalRoutes);
+  app.use('/api/v1/emergencies', emergencyRoutes);
 
   app.get('/health', (_req, res) => res.status(200).json({ status: 'ok' }));
 

@@ -32,3 +32,19 @@ export function registerBedsNamespace(io: Server): void {
 export function emitBedStatusChanged(io: Server, hospitalId: string, payload: BedStatusChangedPayload): void {
   io.of('/beds').to(`hospital:${hospitalId}`).emit('bed:status_changed', payload);
 }
+
+export interface EmergencyAlertPayload {
+  emergencyId: string;
+  patientName: string;
+  patientPhone: string | null;
+  latitude: number;
+  longitude: number;
+  distanceKm: number;
+}
+
+// Reuses the /beds namespace rather than a new one — admins are already connected here via
+// the bed dashboard, and an incoming emergency is part of the same "hospital operations"
+// audience as bed status, not a separate concern that needs its own connection.
+export function emitEmergencyAlert(io: Server, hospitalId: string, payload: EmergencyAlertPayload): void {
+  io.of('/beds').to(`hospital:${hospitalId}`).emit('emergency:new', payload);
+}
