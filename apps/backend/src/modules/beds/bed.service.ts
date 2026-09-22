@@ -5,19 +5,6 @@ import { getSocketServer } from '../../sockets/socketRegistry';
 import { emitBedStatusChanged } from '../../sockets/beds.namespace';
 import { AccessTokenPayload } from '../auth/auth.types';
 
-/**
- * Bed status state machine:
- *
- *   vacant ──allocate──> occupied ──discharge──> cleaning ──markCleaned──> vacant
- *     │                                                                      ^
- *     └──reserve──> reserved ──allocate──────────────────────────────────────┘
- *                      │
- *                      └──cancelReservation──> vacant
- *
- * "cleaning" is a deliberate intermediate state between occupied and vacant —
- * it exists specifically so a bed can never be re-allocated before housekeeping
- * has actually turned it over.
- */
 export class BedService {
   async listForHospital(hospitalId: string, filters: { category?: BedCategory; status?: BedStatus }) {
     return prisma.bed.findMany({
@@ -46,19 +33,28 @@ export class BedService {
     }
     this.assertSameHospital(bed.hospitalId, adminUser);
 
-    if (bed.status !== 'vacant' && bed.status !== 'reserved') {
-      throw new ConflictError(`Cannot allocate a bed with status "${bed.status}"`);
-    }
+    const updatedBed = await prisma.$transaction(async (tx) => {
+      const result = await tx.bed.updateMany({
+        where: {
+          id: bedId,
+          status: { in: ['vacant', 'reserved'] },
+        },
+        data: {
+          status: 'occupied',
+          currentPatientId: patientId,
+        },
+      });
 
-    const [updatedBed] = await prisma.$transaction([
-      prisma.bed.update({
-        where: { id: bedId },
-        data: { status: 'occupied', currentPatientId: patientId },
-      }),
-      prisma.bedAdmission.create({
+      if (result.count === 0) {
+        throw new ConflictError('Bed is already occupied or unavailable');
+      }
+
+      await tx.bedAdmission.create({
         data: { bedId, patientId },
-      }),
-    ]);
+      });
+
+      return tx.bed.findUniqueOrThrow({ where: { id: bedId } });
+    });
 
     this.emit(updatedBed);
     return updatedBed;

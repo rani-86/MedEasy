@@ -40,18 +40,15 @@ model User {
 }
 
 model PatientProfile {
-  id        String   @id @default(uuid())
-  userId    String   @unique @map("user_id")
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  age       Int?
-  // Deliberately stores the same vocabulary as Doctor.specialty rather than a separate
-  // "illness" taxonomy that would need its own translation layer — the patient picks from
-  // a specialty-aligned list, so matching them to a doctor is a direct filter, not a lookup.
-  illnessType String? @map("illness_type")
-  createdAt DateTime @default(now()) @map("created_at")
+  id          String   @id @default(uuid())
+  userId      String   @unique @map("user_id")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  age         Int?
+  illnessType String?  @map("illness_type")
+  createdAt   DateTime @default(now()) @map("created_at")
 
-  appointments Appointment[]
-  bedAdmissions BedAdmission[]
+  appointments     Appointment[]
+  bedAdmissions    BedAdmission[]
   emergencyRequests EmergencyRequest[]
 
   @@map("patient_profiles")
@@ -61,21 +58,15 @@ model Hospital {
   id             String   @id @default(uuid())
   name           String
   address        String
-  // The hospital-provided identifier from registration — distinct from our internal uuid,
-  // mirrors Doctor.licenseNo as "the real-world credential this record was verified against."
   registrationId String   @unique @map("registration_id")
-  // No approval UI exists yet — a new hospital sits unverified until this is flipped directly
-  // in the database, same as how Doctor.licenseVerified is handled today.
   verified       Boolean  @default(false)
-  // Nullable rather than backfilled with a placeholder — a hospital with no coordinates
-  // just doesn't show up in nearest-hospital search instead of showing up at a fake location.
   latitude       Float?
   longitude      Float?
   createdAt      DateTime @default(now()) @map("created_at")
 
-  doctors      Doctor[]
-  appointments Appointment[]
-  beds         Bed[]
+  doctors           Doctor[]
+  appointments      Appointment[]
+  beds              Bed[]
   emergencyRequests EmergencyRequest[]
 
   @@map("hospitals")
@@ -127,23 +118,20 @@ model Appointment {
   status     AppointmentStatus @default(booked)
   createdAt  DateTime          @default(now()) @map("created_at")
 
-  // Prevents two 'booked' appointments from sharing the same doctor + slot at the DB level —
-  // a second, structural guard behind the Redis lock used in the booking service.
-  @@unique([doctorId, slotStart], name: "uq_doctor_slot")
   @@index([patientId, slotStart])
   @@index([hospitalId, slotStart])
   @@map("appointments")
 }
 
 model Bed {
-  id                String    @id @default(uuid())
-  hospitalId        String    @map("hospital_id")
-  hospital          Hospital  @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
-  category          BedCategory
-  bedNumber         String    @map("bed_number")
-  status            BedStatus @default(vacant)
-  currentPatientId  String?   @map("current_patient_id")
-  updatedAt         DateTime  @default(now()) @updatedAt @map("updated_at")
+  id               String    @id @default(uuid())
+  hospitalId       String    @map("hospital_id")
+  hospital         Hospital  @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  category         BedCategory
+  bedNumber        String    @map("bed_number")
+  status           BedStatus @default(vacant)
+  currentPatientId String?   @map("current_patient_id")
+  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at")
 
   admissions BedAdmission[]
 
@@ -173,17 +161,15 @@ enum EmergencyStatus {
 }
 
 model EmergencyRequest {
-  id            String           @id @default(uuid())
-  patientId     String           @map("patient_id")
-  patient       PatientProfile   @relation(fields: [patientId], references: [id])
-  // The nearest verified hospital at the moment the alert was raised — recorded, not just
-  // looked up live, since which hospital was nearest is itself part of the incident record.
-  hospitalId    String           @map("hospital_id")
-  hospital      Hospital         @relation(fields: [hospitalId], references: [id])
-  latitude      Float
-  longitude     Float
-  status        EmergencyStatus  @default(pending)
-  createdAt     DateTime         @default(now()) @map("created_at")
+  id             String          @id @default(uuid())
+  patientId      String          @map("patient_id")
+  patient        PatientProfile  @relation(fields: [patientId], references: [id])
+  hospitalId     String          @map("hospital_id")
+  hospital       Hospital        @relation(fields: [hospitalId], references: [id])
+  latitude       Float
+  longitude      Float
+  status         EmergencyStatus @default(pending)
+  createdAt      DateTime        @default(now()) @map("created_at")
   acknowledgedAt DateTime?       @map("acknowledged_at")
 
   @@index([hospitalId, status])
