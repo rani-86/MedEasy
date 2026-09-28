@@ -1,9 +1,12 @@
 import { prisma } from '../../config/db';
 import { BedCategory, BedStatus } from '@prisma/client';
 import { NotFoundError, ConflictError, ForbiddenError } from '../../common/errors';
+import { acquireLock, releaseLock } from '../../common/utils/locks';
 import { getSocketServer } from '../../sockets/socketRegistry';
 import { emitBedStatusChanged } from '../../sockets/beds.namespace';
 import { AccessTokenPayload } from '../auth/auth.types';
+
+const BED_LOCK_TTL_MS = 5_000;
 
 export class BedService {
   async listForHospital(hospitalId: string, filters: { category?: BedCategory; status?: BedStatus }) {
@@ -33,31 +36,41 @@ export class BedService {
     }
     this.assertSameHospital(bed.hospitalId, adminUser);
 
-    const updatedBed = await prisma.$transaction(async (tx) => {
-      const result = await tx.bed.updateMany({
-        where: {
-          id: bedId,
-          status: { in: ['vacant', 'reserved'] },
-        },
-        data: {
-          status: 'occupied',
-          currentPatientId: patientId,
-        },
+    const lockKey = `lock:bed:${bedId}`;
+    const lockToken = await acquireLock(lockKey, BED_LOCK_TTL_MS);
+    if (!lockToken) {
+      throw new ConflictError('This bed is currently being allocated by another desk. Please try again.');
+    }
+
+    try {
+      const updatedBed = await prisma.$transaction(async (tx) => {
+        const result = await tx.bed.updateMany({
+          where: {
+            id: bedId,
+            status: { in: ['vacant', 'reserved'] },
+          },
+          data: {
+            status: 'occupied',
+            currentPatientId: patientId,
+          },
+        });
+
+        if (result.count === 0) {
+          throw new ConflictError('Bed is already occupied or unavailable');
+        }
+
+        await tx.bedAdmission.create({
+          data: { bedId, patientId },
+        });
+
+        return tx.bed.findUniqueOrThrow({ where: { id: bedId } });
       });
 
-      if (result.count === 0) {
-        throw new ConflictError('Bed is already occupied or unavailable');
-      }
-
-      await tx.bedAdmission.create({
-        data: { bedId, patientId },
-      });
-
-      return tx.bed.findUniqueOrThrow({ where: { id: bedId } });
-    });
-
-    this.emit(updatedBed);
-    return updatedBed;
+      this.emit(updatedBed);
+      return updatedBed;
+    } finally {
+      await releaseLock(lockKey, lockToken);
+    }
   }
 
   async reserve(bedId: string, adminUser: AccessTokenPayload) {
