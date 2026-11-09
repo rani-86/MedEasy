@@ -39,6 +39,25 @@ Read in this order:
 5. [`docs/frontend-architecture.md`](docs/frontend-architecture.md) — Next.js App Router design
 6. [`docs/ml-architecture.md`](docs/ml-architecture.md) — v2 ML architecture (queue/bed prediction, recommendation, inventory forecasting)
 
+## How AI was used in this build
+
+This project was built with AI coding assistants (Claude Code) as a standard part of the
+workflow, not as a one-off scaffold-and-forget step — and every AI-proposed change was verified
+before it was trusted:
+
+- **Concurrency bugs**: the bed-allocation race condition and the appointment slot-booking unique
+  constraint violation (see commit history) were diagnosed with AI assistance, but the fix — a
+  Redis distributed lock plus a DB-level unique constraint as a second layer — was validated with
+  real concurrency tests (`apps/backend` appointments test suite) that spin up parallel requests
+  against the same slot/bed, not just reasoned about in the abstract.
+- **Review discipline**: AI-suggested changes went through the same review as hand-written code —
+  read the diff, understand *why* the fix works (not just that tests pass), and check it against
+  the existing state-machine/locking patterns already in the codebase before merging.
+- **Where AI wasn't trusted blindly**: security-sensitive paths (OTP rate limiting, auth
+  middleware, admin TOTP) were written and reviewed with extra scrutiny rather than accepted as-is,
+  since an AI suggestion that "looks reasonable" isn't the same as one that's safe under load or
+  under attack.
+
 ## Current build status
 
 | Module | Status |
