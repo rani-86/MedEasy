@@ -17,6 +17,24 @@ Patient login uses OTP with no real SMS provider wired up — the demo deploymen
 which returns the OTP directly in the UI instead of sending it. Doctor login: `anjali.sharma@apex.com` /
 `DoctorPass123!`. See [`DEPLOYMENT.md`](DEPLOYMENT.md) for how this is hosted and how to redeploy it.
 
+### Deploying this on AWS instead
+
+The demo runs on Vercel/Render for zero-cost hosting, but the stack maps directly onto managed
+AWS services without changing the application code:
+
+| Piece | Current (demo) | AWS equivalent |
+|---|---|---|
+| Frontend (Next.js) | Vercel | Amplify Hosting, or S3 + CloudFront for a static export |
+| Backend (Express API) | Render | ECS Fargate or App Runner behind an ALB |
+| PostgreSQL | Render managed Postgres | RDS for PostgreSQL (or Aurora PostgreSQL for scale) |
+| Redis (locks, OTP, rate limiting) | Render managed Redis | ElastiCache for Redis |
+| Socket.IO real-time | single instance | ECS service + `@socket.io/redis-adapter` (already a dependency) fanning out across tasks behind the ALB |
+| Secrets (`JWT_*`, DB/Redis URLs) | platform env vars | AWS Secrets Manager or SSM Parameter Store, injected into the ECS task definition |
+
+The one real code-level requirement for running >1 backend instance behind a load balancer is
+already met: Socket.IO is wired through the Redis adapter rather than in-memory state, so bed/queue
+events reach clients regardless of which instance holds the socket.
+
 ## Repo structure
 
 ```
