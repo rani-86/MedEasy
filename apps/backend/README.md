@@ -43,6 +43,26 @@ npm run dev             # starts on http://localhost:4000
 - Doctors with an unverified license still receive a valid token, but scoped to `onboarding:read` only — enforced via `requireScope` in downstream services, not by blocking login outright.
 - Passwords are hashed with bcrypt at 12 rounds; changing a password revokes the existing refresh token, forcing re-login everywhere else.
 
+## Shared/reusable engineering assets (`src/common/`)
+
+Logic that showed up identically in more than one module's `*.validation.ts` file was pulled into
+`src/common/validation/index.ts` rather than left duplicated — this is a deliberate pattern, not
+an afterthought:
+- `idParamSchema(paramName, message)` — the `{ params: { id: uuid } }` shape used by beds, doctors,
+  appointments, and emergencies for their "one resource id in the URL" routes.
+- `paginationQuery` — the `page`/`limit` pair shared by every paginated list endpoint (appointments, doctors).
+- `indianPhoneSchema` — the `+91XXXXXXXXXX` regex used by both OTP auth and patient phone lookup.
+- `latitudeSchema` / `longitudeSchema` — the coordinate bounds shared by hospital registration,
+  nearby-hospital search, and emergency alerts.
+- `emptySchema` — the `z.object({}).optional()` placeholder every schema needs for whichever of
+  `body`/`query`/`params` a given route doesn't use, since `validateRequest` always parses all three.
+
+The same principle already applied to `src/common/errors` (one typed error hierarchy — `NotFoundError`,
+`ConflictError`, `ForbiddenError`, `ValidationError` — used by every module's service layer instead of
+each module inventing its own) and `src/common/utils/locks.ts` (the single `acquireLock`/`releaseLock`
+primitive that both the bed-allocation and appointment-booking modules build their concurrency
+safety on top of, rather than each module reimplementing Redis locking).
+
 ## Not included in this module (see other Medeasy backend modules)
 - Doctor/Admin account creation (onboarding) — owned by the Hospital Admin Portal module, which calls `hashPassword()` exported from `auth.service.ts` when creating a new doctor/admin user.
 - Admin TOTP secret provisioning (`admin:totp_secret:{userId}` in Redis) — belongs to an MFA-setup flow in the Admin Portal module; this module only verifies an already-provisioned secret.

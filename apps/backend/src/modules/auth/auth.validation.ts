@@ -1,23 +1,22 @@
 import { z } from 'zod';
-
-const indianPhoneRegex = /^\+91[6-9]\d{9}$/;
+import { emptySchema, indianPhoneSchema } from '../../common/validation';
 
 export const requestOtpSchema = z.object({
   body: z.object({
-    phone: z.string().regex(indianPhoneRegex, 'Must be a valid Indian phone number in +91XXXXXXXXXX format'),
+    phone: indianPhoneSchema,
   }),
-  query: z.object({}).optional(),
-  params: z.object({}).optional(),
+  query: emptySchema,
+  params: emptySchema,
 });
 
 export const verifyOtpSchema = z.object({
   body: z.object({
-    phone: z.string().regex(indianPhoneRegex, 'Must be a valid Indian phone number in +91XXXXXXXXXX format'),
+    phone: indianPhoneSchema,
     otp: z.string().length(6, 'OTP must be exactly 6 digits').regex(/^\d+$/, 'OTP must be numeric'),
     name: z.string().min(2).max(150).optional(), // used only on first-time signup
   }),
-  query: z.object({}).optional(),
-  params: z.object({}).optional(),
+  query: emptySchema,
+  params: emptySchema,
 });
 
 export const doctorLoginSchema = z.object({
@@ -25,8 +24,8 @@ export const doctorLoginSchema = z.object({
     email: z.string().email('Must be a valid email address'),
     password: z.string().min(8, 'Password must be at least 8 characters'),
   }),
-  query: z.object({}).optional(),
-  params: z.object({}).optional(),
+  query: emptySchema,
+  params: emptySchema,
 });
 
 export const adminLoginSchema = z.object({
@@ -35,8 +34,8 @@ export const adminLoginSchema = z.object({
     password: z.string().min(8),
     totpCode: z.string().length(6, 'TOTP code must be 6 digits').regex(/^\d+$/),
   }),
-  query: z.object({}).optional(),
-  params: z.object({}).optional(),
+  query: emptySchema,
+  params: emptySchema,
 });
 
 export const adminMfaSetupRequestSchema = z.object({
@@ -44,8 +43,8 @@ export const adminMfaSetupRequestSchema = z.object({
     email: z.string().email(),
     password: z.string().min(8),
   }),
-  query: z.object({}).optional(),
-  params: z.object({}).optional(),
+  query: emptySchema,
+  params: emptySchema,
 });
 
 export const adminMfaSetupConfirmSchema = z.object({
@@ -54,16 +53,16 @@ export const adminMfaSetupConfirmSchema = z.object({
     password: z.string().min(8),
     totpCode: z.string().length(6, 'TOTP code must be 6 digits').regex(/^\d+$/),
   }),
-  query: z.object({}).optional(),
-  params: z.object({}).optional(),
+  query: emptySchema,
+  params: emptySchema,
 });
 
 export const refreshTokenSchema = z.object({
   body: z.object({
     refreshToken: z.string().min(10, 'A refresh token is required'),
   }),
-  query: z.object({}).optional(),
-  params: z.object({}).optional(),
+  query: emptySchema,
+  params: emptySchema,
 });
 
 export const changePasswordSchema = z.object({
@@ -76,8 +75,8 @@ export const changePasswordSchema = z.object({
       message: 'New password must be different from the current password',
       path: ['newPassword'],
     }),
-  query: z.object({}).optional(),
-  params: z.object({}).optional(),
+  query: emptySchema,
+  params: emptySchema,
 });
 
 export type RequestOtpInput = z.infer<typeof requestOtpSchema>['body'];

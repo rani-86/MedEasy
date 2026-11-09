@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { emptySchema, idParamSchema, paginationQuery } from '../../common/validation';
 
 export const createAppointmentSchema = z.object({
   body: z.object({
@@ -10,8 +11,8 @@ export const createAppointmentSchema = z.object({
         message: 'slotStart must be in the future',
       }),
   }),
-  query: z.object({}).optional(),
-  params: z.object({}).optional(),
+  query: emptySchema,
+  params: emptySchema,
 });
 
 export const rescheduleAppointmentSchema = z.object({
@@ -26,25 +27,16 @@ export const rescheduleAppointmentSchema = z.object({
   params: z.object({
     id: z.string().uuid(),
   }),
-  query: z.object({}).optional(),
+  query: emptySchema,
 });
 
 export const listAppointmentsQuerySchema = z.object({
-  query: z.object({
-    page: z.coerce.number().int().positive().default(1),
-    limit: z.coerce.number().int().positive().max(100).default(20),
-  }),
-  body: z.object({}).optional(),
-  params: z.object({}).optional(),
+  query: z.object(paginationQuery),
+  body: emptySchema,
+  params: emptySchema,
 });
 
-export const appointmentIdParamSchema = z.object({
-  params: z.object({
-    id: z.string().uuid('Invalid appointment id'),
-  }),
-  body: z.object({}).optional(),
-  query: z.object({}).optional(),
-});
+export const appointmentIdParamSchema = idParamSchema('id', 'Invalid appointment id');
 
 export type CreateAppointmentBody = z.infer<typeof createAppointmentSchema>['body'];
 export type RescheduleAppointmentBody = z.infer<typeof rescheduleAppointmentSchema>['body'];
